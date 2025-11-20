@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+
+  /* Navigation responsive adjustments for medium screens (768px - 1024px) */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    nav button {
+      /* Ensure navigation buttons don't grow too large */
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    nav .relative input {
+      /* Ensure search input is properly sized */
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Prevent navigation overflow on medium screens */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    nav > div > div {
+      /* Allow flex container to shrink properly */
+      min-width: 0;
+    }
+
+    nav button {
+      /* Prevent buttons from being too large */
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+  }
+}
+
+@layer utilities {
+  @media (max-width: 768px) {
+    .text-3xl {
+      font-size: 1.75rem;
+      line-height: 2rem;
+    }
+
+    .text-2xl {
+      font-size: 1.5rem;
+      line-height: 1.75rem;
+    }
+
+    .text-xl {
+      font-size: 1.25rem;
+      line-height: 1.5rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .grid-cols-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-cols-3 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+    .grid-cols-5 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    table {
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    select {
+      font-size: 14px;
+      min-height: 40px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .fixed {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 4rem);
+    overflow-y: visible;
+  }
+
+  form select {
+    width: 100%;
+  }
+
+  @supports (-webkit-touch-callout: none) {
+    .fixed {
+      position: fixed;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+  }
+
+  @media screen and (max-width: 428px) {
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  }
+
+  @media only screen
+    and (device-width: 393px)
+    and (device-height: 852px)
+    and (-webkit-device-pixel-ratio: 3) {
+    .fixed {
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /* Custom styling for query status select - only style the trigger button, not dropdown options */
+  .query-status-select.status-pending > div > button {
+    background-color: rgb(234 179 8);
+    color: white;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .query-status-select.status-pending > div > button:hover {
+    background-color: rgb(202 138 4);
+  }
+
+  .query-status-select.status-resolved > div > button {
+    background-color: rgb(22 163 74);
+    color: white;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    transition: background-color 0.2s;
+  }
+
+  .query-status-select.status-resolved > div > button:hover {
+    background-color: rgb(21 128 61);
+  }
+
+  @media (min-width: 640px) {
+    .query-status-select > div > button {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+
+  .query-status-select > div > button:focus {
+    outline: none;
+    ring: 2px;
+    ring-offset: 2px;
+  }
+
+  .query-status-select.status-pending > div > button:focus {
+    ring-color: rgb(234 179 8);
+  }
+
+  .query-status-select.status-resolved > div > button:focus {
+    ring-color: rgb(22 163 74);
+  }
+}
