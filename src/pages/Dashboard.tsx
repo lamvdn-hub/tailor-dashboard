@@ -289,7 +289,7 @@ export function Dashboard() {
                 <TableHead>Service Type</TableHead>
                 <TableHead>Garment Type</TableHead>
                 <TableHead>Date</TableHead>
-                {activeTab === 'all' && <TableHead>Status</TableHead>}
+                <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -304,21 +304,19 @@ export function Dashboard() {
                   <TableCell className="capitalize">{session.service_type || '-'}</TableCell>
                   <TableCell className="capitalize">{session.garment_type}</TableCell>
                   <TableCell>{formatDate(session.created_at)}</TableCell>
-                  {activeTab === 'all' && (
-                    <TableCell>
-                      <div className={updatingStatusId === session.id ? 'opacity-50 pointer-events-none' : ''}>
-                        <StatusSelect
-                          value={session.status}
-                          onChange={(value) => handleStatusChange(session.id, value as 'active' | 'completed' | 'ready')}
-                          options={[
-                            { value: 'active', label: 'Active' },
-                            { value: 'ready', label: 'Ready' },
-                            { value: 'completed', label: 'Completed' },
-                          ]}
-                        />
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <div className={updatingStatusId === session.id ? 'opacity-50 pointer-events-none' : ''}>
+                      <StatusSelect
+                        value={session.status}
+                        onChange={(value) => handleStatusChange(session.id, value as 'active' | 'completed' | 'ready')}
+                        options={[
+                          { value: 'active', label: 'Active' },
+                          { value: 'ready', label: 'Ready' },
+                          { value: 'completed', label: 'Completed' },
+                        ]}
+                      />
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
