@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Clipboard } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Select } from '../components/Select';
 import { Textarea } from '../components/Textarea';
 import { SuitConfiguration } from '../components/SuitConfiguration';
 import { MeasurementTable } from '../components/MeasurementTable';
-import { supabase, Client, Fabric, MeasurementDefinition } from '../lib/supabase';
+import { ToastContainer } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
+import { supabase, Client, Fabric, MeasurementDefinition, Measurement } from '../lib/supabase';
+import { getMeasurementCategoriesForGarment, normalizeMeasurementName } from '../lib/measurementCategories';
+import { formatDate } from '../lib/dateUtils';
 
 interface MeasurementValue {
   definitionId: string;
@@ -41,7 +45,9 @@ export function NewSession() {
   const [jacketValues, setJacketValues] = useState<MeasurementValue[]>([]);
   const [trousersValues, setTrousersValues] = useState<MeasurementValue[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMeasurements, setLoadingMeasurements] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { toasts, showToast, removeToast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -95,6 +101,146 @@ export function NewSession() {
       }
       return [...prev, { definitionId, [field]: value ? parseFloat(value) : null }];
     });
+  }
+
+  async function handleLoadLatestMeasurements() {
+    if (!formData.clientId) {
+      showToast('Please select a client first', 'warning');
+      return;
+    }
+
+    if (!formData.garmentType) {
+      showToast('Please select a garment type first', 'warning');
+      return;
+    }
+
+    const hasExistingValues = [...jacketValues, ...trousersValues].some(
+      v => v.leftCm !== null && v.leftCm !== undefined ||
+           v.rightCm !== null && v.rightCm !== undefined ||
+           v.unitCm !== null && v.unitCm !== undefined
+    );
+
+    if (hasExistingValues) {
+      const confirmed = window.confirm(
+        'Overwrite Existing Measurements?\n\nThis will replace any measurements you\'ve entered. Continue?'
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setLoadingMeasurements(true);
+
+    try {
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('id, created_at')
+        .eq('client_id', formData.clientId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (sessionsError) throw sessionsError;
+
+      if (!sessionsData || sessionsData.length === 0) {
+        showToast('No stored measurements found for this client', 'warning');
+        setLoadingMeasurements(false);
+        return;
+      }
+
+      const latestSessionId = sessionsData[0].id;
+      const latestSessionDate = sessionsData[0].created_at;
+
+      const { data: measurementsData, error: measurementsError } = await supabase
+        .from('measurements')
+        .select('*')
+        .eq('session_id', latestSessionId);
+
+      if (measurementsError) throw measurementsError;
+
+      if (!measurementsData || measurementsData.length === 0) {
+        showToast('No measurements found in latest session', 'warning');
+        setLoadingMeasurements(false);
+        return;
+      }
+
+      const relevantCategories = getMeasurementCategoriesForGarment(formData.garmentType);
+      const filteredMeasurements = measurementsData.filter(m => {
+        const normalizedName = normalizeMeasurementName(m.measurement_name);
+        return relevantCategories.some(cat =>
+          normalizedName.toLowerCase().includes(cat.toLowerCase()) ||
+          cat.toLowerCase().includes(normalizedName.toLowerCase())
+        );
+      });
+
+      if (filteredMeasurements.length === 0) {
+        showToast(`No ${formData.garmentType} measurements found. Loaded 0 measurements.`, 'warning');
+        setLoadingMeasurements(false);
+        return;
+      }
+
+      if (formData.garmentType === 'jacket' || formData.garmentType === 'suit') {
+        const newJacketValues = jacketDefinitions.map(def => {
+          const leftMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === `${def.name} (L)`
+          );
+          const rightMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === `${def.name} (R)`
+          );
+          const singleMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === def.name
+          );
+
+          if (def.mode === 'paired') {
+            return {
+              definitionId: def.id,
+              leftCm: leftMeasurement?.unit_cm ? Number(leftMeasurement.unit_cm) : null,
+              rightCm: rightMeasurement?.unit_cm ? Number(rightMeasurement.unit_cm) : null,
+            };
+          } else {
+            return {
+              definitionId: def.id,
+              unitCm: singleMeasurement?.unit_cm ? Number(singleMeasurement.unit_cm) : null,
+            };
+          }
+        });
+        setJacketValues(newJacketValues);
+      }
+
+      if (formData.garmentType === 'trousers' || formData.garmentType === 'suit') {
+        const newTrousersValues = trousersDefinitions.map(def => {
+          const leftMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === `${def.name} (L)`
+          );
+          const rightMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === `${def.name} (R)`
+          );
+          const singleMeasurement = filteredMeasurements.find(
+            m => m.measurement_name === def.name
+          );
+
+          if (def.mode === 'paired') {
+            return {
+              definitionId: def.id,
+              leftCm: leftMeasurement?.unit_cm ? Number(leftMeasurement.unit_cm) : null,
+              rightCm: rightMeasurement?.unit_cm ? Number(rightMeasurement.unit_cm) : null,
+            };
+          } else {
+            return {
+              definitionId: def.id,
+              unitCm: singleMeasurement?.unit_cm ? Number(singleMeasurement.unit_cm) : null,
+            };
+          }
+        });
+        setTrousersValues(newTrousersValues);
+      }
+
+      showToast(`Measurements loaded from ${formatDate(latestSessionDate)}`, 'success');
+    } catch (error) {
+      console.error('Error loading measurements:', error);
+      showToast('Error loading measurements', 'error');
+    } finally {
+      setLoadingMeasurements(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -305,11 +451,13 @@ export function NewSession() {
 
   return (
     <div className="space-y-6">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex items-center gap-4">
         <Button variant="secondary" onClick={() => navigate('/dashboard')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">New Session</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">New Session</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -381,6 +529,23 @@ export function NewSession() {
             )}
           </Card>
         )}
+
+        <div className="flex justify-center py-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleLoadLatestMeasurements}
+            disabled={loadingMeasurements || !formData.clientId || !formData.garmentType}
+            className="w-full sm:w-auto"
+          >
+            <Clipboard className="w-5 h-5 mr-2" />
+            {loadingMeasurements ? 'Loading...' : 'Load from Latest Measurements'}
+          </Button>
+        </div>
+
+        <p className="text-sm text-center text-gray-500 dark:text-gray-400 -mt-2">
+          Loads from latest record - all fields remain editable
+        </p>
 
         {formData.garmentType === 'suit' ? (
           <>
