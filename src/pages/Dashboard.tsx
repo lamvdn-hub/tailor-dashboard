@@ -153,7 +153,7 @@ export function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button onClick={() => navigate('/clients/new/sessions/new')} className="flex-1 sm:flex-none">New Session</Button>
+          <Button onClick={() => navigate('/sessions/new')} className="flex-1 sm:flex-none">New Session</Button>
           <Button variant="secondary" onClick={() => navigate('/clients/new')} className="flex-1 sm:flex-none">New Client</Button>
           <Button variant="secondary" onClick={() => navigate('/fabrics')} className="hidden sm:inline-flex">View Fabrics</Button>
         </div>

@@ -23,12 +23,21 @@ interface MeasurementValue {
 export function NewSession() {
   const navigate = useNavigate();
   const { clientId: initialClientId } = useParams<{ clientId: string }>();
+
+  const isValidClientId = (id: string | undefined): boolean => {
+    if (!id) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
+  const validInitialClientId = isValidClientId(initialClientId) ? initialClientId : undefined;
+
   const [clients, setClients] = useState<Client[]>([]);
   const [fabrics, setFabrics] = useState<Fabric[]>([]);
   const [jacketDefinitions, setJacketDefinitions] = useState<MeasurementDefinition[]>([]);
   const [trousersDefinitions, setTrousersDefinitions] = useState<MeasurementDefinition[]>([]);
   const [formData, setFormData] = useState({
-    clientId: initialClientId || '',
+    clientId: validInitialClientId || '',
     serviceType: 'MTM' as 'MTM' | 'Bespoke',
     garmentType: 'jacket' as 'jacket' | 'trousers' | 'suit',
     fabricId: '',
@@ -479,7 +488,7 @@ export function NewSession() {
                 })),
               ]}
               error={errors.client}
-              disabled={!!initialClientId}
+              disabled={!!validInitialClientId}
             />
 
             <Select
