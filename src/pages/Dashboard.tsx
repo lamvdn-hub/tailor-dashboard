@@ -219,12 +219,12 @@ export function Dashboard() {
         <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Sessions</h2>
 
-          <div className="flex flex-col sm:flex-row border-b border-gray-200 dark:border-gray-700">
+          <div className="flex flex-row flex-nowrap w-full border-b border-gray-200 dark:border-gray-700">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-150 ${
+                className={`flex-1 min-w-0 px-2 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors duration-150 ${
                   activeTab === tab.id
                     ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
