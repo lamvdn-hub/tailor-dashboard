@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Scissors, PackageCheck, Calendar, Trash2 } from 'lucide-react';
+import { Users, Scissors, PackageCheck, Calendar, Trash2, PlusCircle, Package, CheckCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { StatusSelect } from '../components/StatusSelect';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/Table';
+import { ToastContainer } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { supabase, Session, Client } from '../lib/supabase';
 import { formatDate } from '../lib/dateUtils';
 
@@ -12,8 +14,11 @@ interface SessionWithClient extends Session {
   client: Client;
 }
 
+type TabFilter = 'all' | 'active' | 'ready' | 'completed';
+
 export function Dashboard() {
   const navigate = useNavigate();
+  const { toasts, showToast, removeToast } = useToast();
   const [stats, setStats] = useState({
     totalClients: 0,
     activeSessions: 0,
@@ -21,11 +26,16 @@ export function Dashboard() {
     thisWeekSessions: 0,
   });
   const [recentSessions, setRecentSessions] = useState<SessionWithClient[]>([]);
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   useEffect(() => {
+    const savedTab = localStorage.getItem('recentSessionsTab');
+    if (savedTab && ['all', 'active', 'ready', 'completed'].includes(savedTab)) {
+      setActiveTab(savedTab as TabFilter);
+    }
     loadDashboardData();
   }, []);
 
@@ -77,45 +87,70 @@ export function Dashboard() {
       .eq('id', sessionId);
 
     if (error) {
-      alert('Error deleting session: ' + error.message);
+      showToast('Error deleting session: ' + error.message, 'error');
       setDeletingId(null);
       return;
     }
 
     setRecentSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
+    showToast('Session deleted successfully', 'success');
     loadDashboardData();
     setDeletingId(null);
   }
 
+  function handleTabClick(tab: TabFilter) {
+    setActiveTab(tab);
+    localStorage.setItem('recentSessionsTab', tab);
+  }
+
+  const filteredSessions = activeTab === 'all'
+    ? recentSessions
+    : recentSessions.filter(session => session.status === activeTab);
+
+  const allCount = recentSessions.length;
+  const activeCount = recentSessions.filter(s => s.status === 'active').length;
+  const readyCount = recentSessions.filter(s => s.status === 'ready').length;
+  const completedCount = recentSessions.filter(s => s.status === 'completed').length;
+
+  const tabs = [
+    { id: 'all' as TabFilter, label: 'All', count: allCount },
+    { id: 'active' as TabFilter, label: 'Active', count: activeCount },
+    { id: 'ready' as TabFilter, label: 'Ready', count: readyCount },
+    { id: 'completed' as TabFilter, label: 'Completed', count: completedCount },
+  ];
+
   async function handleStatusChange(sessionId: string, newStatus: 'active' | 'completed' | 'ready') {
-    // Set loading state for this specific session
     setUpdatingStatusId(sessionId);
 
-    // Optimistically update the UI
     const previousSessions = [...recentSessions];
+    const oldSession = recentSessions.find(s => s.id === sessionId);
+    const oldStatus = oldSession?.status;
+
     setRecentSessions(prevSessions =>
       prevSessions.map(session =>
         session.id === sessionId ? { ...session, status: newStatus } : session
       )
     );
 
-    // Update the database
     const { error } = await supabase
       .from('sessions')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', sessionId);
 
     if (error) {
-      // Revert optimistic update on error
       setRecentSessions(previousSessions);
-      alert('Error updating status: ' + error.message);
+      showToast('Error updating status: ' + error.message, 'error');
       setUpdatingStatusId(null);
       return;
     }
 
-    // Refresh only the statistics without reloading the entire sessions list
     await refreshStats();
     setUpdatingStatusId(null);
+
+    if (oldStatus !== newStatus) {
+      const statusLabels = { active: 'Active', ready: 'Ready', completed: 'Completed' };
+      showToast(`Session moved to ${statusLabels[newStatus]}`, 'success');
+    }
   }
 
   async function refreshStats() {
@@ -150,6 +185,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -179,14 +216,71 @@ export function Dashboard() {
       </div>
 
       <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Sessions</h2>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Recent Sessions</h2>
+
+          <div className="flex flex-col sm:flex-row border-b border-gray-200 dark:border-gray-700">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-150 ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                {tab.label} ({tab.count})
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
           <p className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</p>
-        ) : recentSessions.length === 0 ? (
-          <p className="text-center py-8 text-gray-500 dark:text-gray-400">No sessions yet. Create your first session to get started.</p>
+        ) : filteredSessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            {activeTab === 'all' && (
+              <>
+                <PlusCircle className="w-16 h-16 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No sessions yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Create your first session to get started</p>
+                  <Button onClick={() => navigate('/sessions/new')}>
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Add First Session
+                  </Button>
+                </div>
+              </>
+            )}
+            {activeTab === 'active' && (
+              <>
+                <Scissors className="w-16 h-16 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No active sessions</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Sessions in progress will appear here</p>
+                </div>
+              </>
+            )}
+            {activeTab === 'ready' && (
+              <>
+                <Package className="w-16 h-16 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No garments ready for pickup</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Completed garments will appear here</p>
+                </div>
+              </>
+            )}
+            {activeTab === 'completed' && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No completed sessions yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Finished sessions will appear here</p>
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -195,12 +289,12 @@ export function Dashboard() {
                 <TableHead>Service Type</TableHead>
                 <TableHead>Garment Type</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
+                {activeTab === 'all' && <TableHead>Status</TableHead>}
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentSessions.map((session) => (
+              {filteredSessions.map((session) => (
                 <TableRow key={session.id}>
                   <TableCell>
                     {session.client.first_name && session.client.last_name
@@ -210,19 +304,21 @@ export function Dashboard() {
                   <TableCell className="capitalize">{session.service_type || '-'}</TableCell>
                   <TableCell className="capitalize">{session.garment_type}</TableCell>
                   <TableCell>{formatDate(session.created_at)}</TableCell>
-                  <TableCell>
-                    <div className={updatingStatusId === session.id ? 'opacity-50 pointer-events-none' : ''}>
-                      <StatusSelect
-                        value={session.status}
-                        onChange={(value) => handleStatusChange(session.id, value as 'active' | 'completed' | 'ready')}
-                        options={[
-                          { value: 'active', label: 'Active' },
-                          { value: 'ready', label: 'Ready' },
-                          { value: 'completed', label: 'Completed' },
-                        ]}
-                      />
-                    </div>
-                  </TableCell>
+                  {activeTab === 'all' && (
+                    <TableCell>
+                      <div className={updatingStatusId === session.id ? 'opacity-50 pointer-events-none' : ''}>
+                        <StatusSelect
+                          value={session.status}
+                          onChange={(value) => handleStatusChange(session.id, value as 'active' | 'completed' | 'ready')}
+                          options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'ready', label: 'Ready' },
+                            { value: 'completed', label: 'Completed' },
+                          ]}
+                        />
+                      </div>
+                    </TableCell>
+                  )}
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
