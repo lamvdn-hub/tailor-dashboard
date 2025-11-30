@@ -180,7 +180,7 @@ export function Dashboard() {
     { icon: Users, label: 'Total Clients', value: stats.totalClients, color: 'text-blue-600' },
     { icon: Scissors, label: 'Active Sessions', value: stats.activeSessions, color: 'text-green-600' },
     { icon: PackageCheck, label: 'Ready for Pickup', value: stats.readyForPickup, color: 'text-orange-600' },
-    { icon: Calendar, label: "This Week's Entries", value: stats.thisWeekSessions, color: 'text-[#506B4D]' },
+    { icon: Calendar, label: "New Sessions This Week", value: stats.thisWeekSessions, color: 'text-[#506B4D]' },
   ];
 
   return (
