@@ -35,7 +35,7 @@ export function PrivacyPolicy() {
                 <ul className="list-none space-y-1 ml-4 mt-2">
                   <li><span className="font-medium">Name:</span> Vu Dong Lam Nguyen</li>
                   <li><span className="font-medium">Organization number:</span> Sole proprietor</li>
-                  <li><span className="font-medium">Address:</span> [Your Business Address]</li>
+                  <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                   <li><span className="font-medium">Email:</span> lam.vudongnguyen@gmail.com</li>
                 </ul>
               </div>
@@ -621,8 +621,8 @@ export function PrivacyPolicy() {
                   <p className="font-medium mb-2">Tailor Notebook</p>
                   <ul className="list-none space-y-1 ml-4">
                     <li><span className="font-medium">Operated by:</span> Vu Dong Lam Nguyen</li>
-                    <li><span className="font-medium">Organization number:</span> Sole proprietor</li>
-                    <li><span className="font-medium">Address:</span> [Your Business Address]</li>
+                    <li><span className="font-medium">Organization number:</span> Individual service provider (sole proprietor)</li>
+                    <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                     <li><span className="font-medium">Email (Privacy):</span> lam.vudongnguyen@gmail.com</li>
                     <li><span className="font-medium">Email (Support):</span> lam.vudongnguyen@gmail.com</li>
                     <li><span className="font-medium">Email (General):</span> lam.vudongnguyen@gmail.com</li>
