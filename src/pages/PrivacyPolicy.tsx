@@ -19,7 +19,7 @@ export function PrivacyPolicy() {
 
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8EAE7] mb-2">Privacy Policy</h1>
-          <p className="text-sm text-gray-600 dark:text-[#B7BAAE]">Last updated: November 2025</p>
+          <p className="text-sm text-gray-600 dark:text-[#B7BAAE]">Last updated: December 2025</p>
         </div>
 
         <div className="bg-white dark:bg-[#1B1F23] rounded-lg border border-gray-200 dark:border-[#2A3136] p-6 space-y-8">
@@ -27,14 +27,14 @@ export function PrivacyPolicy() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">1. Introduction</h2>
             <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
               <p>
-                This Privacy Policy explains how Tailor Notebook processes personal data in compliance with the General Data Protection Regulation (GDPR) and Swedish data protection law.
+                This Privacy Policy explains how Tailor Notebook processes personal data in compliance with the General Data Protection Regulation (GDPR), German data protection law (BDSG - Bundesdatenschutzgesetz), and Swedish data protection requirements for cross-border services within the EU.
               </p>
               <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
                 <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Service Provider:</p>
                 <p>Tailor Notebook is operated by:</p>
                 <ul className="list-none space-y-1 ml-4 mt-2">
                   <li><span className="font-medium">Name:</span> Vu Dong Lam Nguyen</li>
-                  <li><span className="font-medium">Organization number:</span> Sole proprietor</li>
+                  <li><span className="font-medium">Status:</span> Individual service provider (sole proprietor)</li>
                   <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                   <li><span className="font-medium">Email:</span> lam.vudongnguyen@gmail.com</li>
                 </ul>
@@ -263,7 +263,7 @@ export function PrivacyPolicy() {
                 <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Legal Disclosures</h3>
                 <p className="mb-2">Data may be disclosed only:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>To legal authorities when required by Swedish or EU law</li>
+                  <li>To legal authorities when required by German, Swedish, or EU law</li>
                   <li>In response to valid legal process (court orders, subpoenas)</li>
                   <li>To protect rights, safety, or property when legally permitted</li>
                 </ul>
@@ -318,17 +318,31 @@ export function PrivacyPolicy() {
 
                 <div>
                   <p className="font-medium text-gray-900 dark:text-[#E8EAE7]">Right to Lodge a Complaint</p>
-                  <p>Data subjects have the right to lodge a complaint with the supervisory authority:</p>
-                  <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136] mt-2">
-                    <p className="font-medium mb-2">Swedish Authority for Privacy Protection (Integritetsskyddsmyndigheten - IMY)</p>
-                    <ul className="list-none space-y-1 ml-4">
+                  <p className="mb-2">Data subjects have the right to lodge a complaint with the relevant supervisory authority:</p>
+
+                  <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136] mt-2 mb-3">
+                    <p className="font-medium mb-2">For Swedish clients (tailoring customers):</p>
+                    <p className="font-medium">Swedish Authority for Privacy Protection (Integritetsskyddsmyndigheten - IMY)</p>
+                    <ul className="list-none space-y-1 ml-4 mt-2">
                       <li><span className="font-medium">Website:</span> imy.se</li>
                       <li><span className="font-medium">Email:</span> imy@imy.se</li>
                       <li><span className="font-medium">Phone:</span> +46 8 657 61 00</li>
                       <li><span className="font-medium">Address:</span> Box 8114, 104 20 Stockholm, Sweden</li>
                     </ul>
                   </div>
-                  <p className="mt-2 font-medium">Complaints should first be directed to the tailoring business (Data Controller).</p>
+
+                  <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136] mb-3">
+                    <p className="font-medium mb-2">For German processor matters:</p>
+                    <p className="font-medium">German Federal Commissioner for Data Protection and Freedom of Information (BfDI)</p>
+                    <ul className="list-none space-y-1 ml-4 mt-2">
+                      <li><span className="font-medium">Website:</span> bfdi.bund.de</li>
+                      <li><span className="font-medium">Email:</span> poststelle@bfdi.bund.de</li>
+                      <li><span className="font-medium">Phone:</span> +49 228 997799-0</li>
+                      <li><span className="font-medium">Address:</span> Graurheindorfer Str. 153, 53117 Bonn, Germany</li>
+                    </ul>
+                  </div>
+
+                  <p className="font-medium">Complaints should first be directed to the tailoring business (Data Controller).</p>
                 </div>
               </div>
 
@@ -422,9 +436,15 @@ export function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">11. International Data Transfers</h2>
-            <div className="space-y-2 text-gray-700 dark:text-[#B7BAAE]">
+            <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
               <p className="font-medium">All data is stored exclusively within the <span className="text-gray-900 dark:text-[#E8EAE7]">European Union (EU)</span>.</p>
-              <p className="font-medium">No international data transfers outside the EU occur.</p>
+
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Cross-border processing within EU:</h3>
+                <p>Tailor Notebook operates from Germany and provides services to Swedish businesses. This constitutes cross-border processing within the EU, which is permitted under GDPR as both countries are EU member states with equivalent data protection standards.</p>
+              </div>
+
+              <p className="font-medium">No data transfers outside the EU occur.</p>
               <p>All sub-processors are EU-based and GDPR-compliant.</p>
             </div>
           </section>
@@ -621,11 +641,11 @@ export function PrivacyPolicy() {
                   <p className="font-medium mb-2">Tailor Notebook</p>
                   <ul className="list-none space-y-1 ml-4">
                     <li><span className="font-medium">Operated by:</span> Vu Dong Lam Nguyen</li>
-                    <li><span className="font-medium">Organization number:</span> Individual service provider (sole proprietor)</li>
+                    <li><span className="font-medium">Status:</span> Individual service provider (sole proprietor)</li>
                     <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                     <li><span className="font-medium">Email (Privacy):</span> lam.vudongnguyen@gmail.com</li>
                     <li><span className="font-medium">Email (Support):</span> lam.vudongnguyen@gmail.com</li>
-                    <li><span className="font-medium">Email (General):</span> lam.vudongnguyen@gmail.com</li>
+                    <li><span className="font-medium">Phone:</span> +49 15257431776</li>
                   </ul>
                 </div>
               </div>
@@ -643,19 +663,38 @@ export function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">18. Supervisory Authority</h2>
-            <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
-              <p>Data protection matters in Sweden are overseen by:</p>
-              <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
-                <p className="font-medium mb-2">Swedish Authority for Privacy Protection</p>
-                <p className="font-medium mb-2">Integritetsskyddsmyndigheten (IMY)</p>
-                <ul className="list-none space-y-1 ml-4">
-                  <li><span className="font-medium">Website:</span> imy.se</li>
-                  <li><span className="font-medium">Email:</span> imy@imy.se</li>
-                  <li><span className="font-medium">Phone:</span> +46 8 657 61 00</li>
-                  <li><span className="font-medium">Address:</span> Box 8114, 104 20 Stockholm, Sweden</li>
-                </ul>
+            <div className="space-y-4 text-gray-700 dark:text-[#B7BAAE]">
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">For Swedish Controllers (Tailoring Businesses):</h3>
+                <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
+                  <p className="font-medium mb-2">Swedish Authority for Privacy Protection</p>
+                  <p className="font-medium mb-2">Integritetsskyddsmyndigheten (IMY)</p>
+                  <ul className="list-none space-y-1 ml-4">
+                    <li><span className="font-medium">Website:</span> imy.se</li>
+                    <li><span className="font-medium">Email:</span> imy@imy.se</li>
+                    <li><span className="font-medium">Phone:</span> +46 8 657 61 00</li>
+                    <li><span className="font-medium">Address:</span> Box 8114, 104 20 Stockholm, Sweden</li>
+                  </ul>
+                </div>
+                <p className="mt-2 italic">Swedish tailoring businesses are primarily subject to IMY oversight for their data controller responsibilities.</p>
               </div>
-              <p className="mt-3">Both controllers and processors are subject to IMY oversight for GDPR compliance.</p>
+
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">For German Processor (Tailor Notebook):</h3>
+                <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
+                  <p className="font-medium mb-2">German Federal Commissioner for Data Protection and Freedom of Information</p>
+                  <p className="font-medium mb-2">Bundesbeauftragte für den Datenschutz und die Informationsfreiheit (BfDI)</p>
+                  <ul className="list-none space-y-1 ml-4">
+                    <li><span className="font-medium">Website:</span> bfdi.bund.de</li>
+                    <li><span className="font-medium">Email:</span> poststelle@bfdi.bund.de</li>
+                    <li><span className="font-medium">Phone:</span> +49 228 997799-0</li>
+                    <li><span className="font-medium">Address:</span> Graurheindorfer Str. 153, 53117 Bonn, Germany</li>
+                  </ul>
+                </div>
+                <p className="mt-2 italic">As a German-based processor, Tailor Notebook is subject to BfDI oversight for processor compliance under GDPR Article 28.</p>
+              </div>
+
+              <p className="mt-3">Both controllers and processors operating cross-border within the EU are subject to GDPR requirements and may be overseen by multiple supervisory authorities depending on the nature of the complaint.</p>
             </div>
           </section>
 
