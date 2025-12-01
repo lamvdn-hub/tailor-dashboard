@@ -19,7 +19,7 @@ export function TermsOfService() {
 
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E8EAE7] mb-2">Terms of Service</h1>
-          <p className="text-sm text-gray-600 dark:text-[#B7BAAE]">Last updated: November 2025</p>
+          <p className="text-sm text-gray-600 dark:text-[#B7BAAE]">Last updated: December 2025</p>
         </div>
 
         <div className="bg-white dark:bg-[#1B1F23] rounded-lg border border-gray-200 dark:border-[#2A3136] p-6 space-y-8">
@@ -45,10 +45,10 @@ export function TermsOfService() {
               <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Tailor Notebook is operated by:</p>
               <ul className="list-none space-y-1 ml-4 text-gray-700 dark:text-[#B7BAAE]">
                 <li><span className="font-medium">Name:</span> Vu Dong Lam Nguyen</li>
-                <li><span className="font-medium">Organization number:</span> Sole proprietor</li>
-                <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5</li>
+                <li><span className="font-medium">Status:</span> Individual service provider (sole proprietor)</li>
+                <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                 <li><span className="font-medium">Email:</span> lam.vudongnguyen@gmail.com</li>
-                <li><span className="font-medium">Website:</span> [your domain]</li>
+                <li><span className="font-medium">Phone:</span> +49 15257431776</li>
               </ul>
             </div>
           </section>
@@ -204,7 +204,7 @@ export function TermsOfService() {
                   <li>Determine lawful basis for processing client data</li>
                   <li>Respond to data subject requests (access, correction, deletion, etc.)</li>
                   <li>Maintain appropriate privacy notices for clients</li>
-                  <li>Notify supervisory authority (IMY) of breaches when required</li>
+                  <li>Notify supervisory authority (IMY in Sweden) of breaches when required</li>
                 </ul>
               </div>
 
@@ -385,9 +385,11 @@ export function TermsOfService() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">13. Service Modifications</h2>
             <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
               <p>Tailor Notebook may add features, improve functionality, update the interface, or deprecate outdated features.</p>
-              <p><span className="font-medium">Significant changes</span> (affecting core functionality) are announced at least 30 days in advance when possible.</p>
-              <p><span className="font-medium">Minor changes</span> (bug fixes, performance improvements) may occur without advance notice.</p>
-              <p><span className="font-medium">Feature deprecation:</span> Minimum 60 days notice with alternative solutions offered.</p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                <li><span className="font-medium">Significant changes</span> (affecting core functionality) are announced at least 30 days in advance when possible</li>
+                <li><span className="font-medium">Minor changes</span> (bug fixes, performance improvements) may occur without advance notice</li>
+                <li><span className="font-medium">Feature deprecation:</span> Minimum 60 days notice with alternative solutions offered</li>
+              </ul>
             </div>
           </section>
 
@@ -448,7 +450,7 @@ export function TermsOfService() {
                   <li>Providing <span className="font-medium">30 days written notice</span></li>
                   <li>Deleting account through account settings (immediate termination)</li>
                 </ul>
-                <p className="mt-2">Upon termination: All data permanently deleted within 7 days, backups purged within 30 days, outstanding invoices remain due.</p>
+                <p className="mt-2"><span className="font-medium">Upon termination:</span> All data permanently deleted within 7 days, backups purged within 30 days, outstanding invoices remain due.</p>
               </div>
 
               <div>
@@ -482,11 +484,16 @@ export function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">16. Governing Law and Dispute Resolution</h2>
             <div className="space-y-4 text-gray-700 dark:text-[#B7BAAE]">
-              <p>These Terms are governed by the <span className="font-medium">laws of Sweden</span> and comply with GDPR and Swedish Data Protection Act.</p>
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Governing Law</h3>
+                <p>These Terms are governed by the laws of <span className="font-medium">Germany</span> and comply with the <span className="font-medium">General Data Protection Regulation (GDPR)</span> and applicable German data protection laws.</p>
+                <p className="mt-2">Cross-border services to Sweden are provided in accordance with EU regulations and Swedish data protection requirements.</p>
+              </div>
 
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Jurisdiction</h3>
-                <p>Disputes shall be resolved in the <span className="font-medium">courts of Berlin, Germany</span>.</p>
+                <p>Any disputes arising from these Terms shall be resolved in the competent courts of Germany, with jurisdiction determined by the Service Provider's place of residence in accordance with German civil procedure law.</p>
+                <p className="mt-2">For Swedish controllers, alternative dispute resolution through the EU Online Dispute Resolution platform (<a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">https://ec.europa.eu/consumers/odr</a>) is also available.</p>
               </div>
 
               <div>
@@ -494,21 +501,32 @@ export function TermsOfService() {
                 <p className="mb-2">Before legal proceedings, parties agree to:</p>
                 <ol className="list-decimal list-inside ml-4 space-y-1">
                   <li><span className="font-medium">Direct Negotiation (30 days):</span> Good-faith discussions to resolve amicably</li>
-                  <li><span className="font-medium">Escalation:</span> Mediation by mutual agreement (costs shared)</li>
+                  <li><span className="font-medium">Mediation:</span> By mutual agreement (costs shared)</li>
                   <li><span className="font-medium">Legal Proceedings:</span> If negotiation fails</li>
                 </ol>
               </div>
 
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">GDPR Supervisory Authority</h3>
-                <p className="mb-2">Data protection disputes may also be brought to:</p>
-                <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
-                  <p className="font-medium mb-2">Swedish Authority for Privacy Protection (IMY)</p>
+                <p className="mb-3">For data protection matters, controllers and processors may contact:</p>
+
+                <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136] mb-3">
+                  <p className="font-medium mb-2">Swedish Authority for Privacy Protection (IMY) - For Swedish controllers:</p>
                   <ul className="list-none space-y-1 ml-4">
                     <li><span className="font-medium">Website:</span> imy.se</li>
                     <li><span className="font-medium">Email:</span> imy@imy.se</li>
                     <li><span className="font-medium">Phone:</span> +46 8 657 61 00</li>
                     <li><span className="font-medium">Address:</span> Box 8114, 104 20 Stockholm, Sweden</li>
+                  </ul>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-[#13171B] p-4 rounded-lg border border-gray-200 dark:border-[#2A3136]">
+                  <p className="font-medium mb-2">German Federal Commissioner for Data Protection (BfDI) - For German processor matters:</p>
+                  <ul className="list-none space-y-1 ml-4">
+                    <li><span className="font-medium">Website:</span> bfdi.bund.de</li>
+                    <li><span className="font-medium">Email:</span> poststelle@bfdi.bund.de</li>
+                    <li><span className="font-medium">Phone:</span> +49 228 997799-0</li>
+                    <li><span className="font-medium">Address:</span> Graurheindorfer Str. 153, 53117 Bonn, Germany</li>
                   </ul>
                 </div>
               </div>
@@ -519,12 +537,11 @@ export function TermsOfService() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">17. Changes to Terms</h2>
             <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
               <p>Tailor Notebook may modify these Terms to reflect service changes, legal requirements, or business model adjustments.</p>
-
-              <p><span className="font-medium">Material changes:</span> Communicated via email at least <span className="font-medium">30 days before taking effect</span> with in-app notification.</p>
-
-              <p><span className="font-medium">Right to reject:</span> Controllers may terminate service without penalty within the 30-day notice period if they do not agree with material changes.</p>
-
-              <p className="font-medium">Continued use after the effective date = acceptance of modified Terms.</p>
+              <ul className="list-disc list-inside ml-4 space-y-1">
+                <li><span className="font-medium">Material changes:</span> Communicated via email at least 30 days before taking effect with in-app notification</li>
+                <li><span className="font-medium">Right to reject:</span> Controllers may terminate service without penalty within the 30-day notice period if they do not agree with material changes</li>
+                <li><span className="font-medium">Continued use</span> after the effective date = acceptance of modified Terms</li>
+              </ul>
             </div>
           </section>
 
@@ -584,7 +601,7 @@ export function TermsOfService() {
                 <p className="mb-2">Controller is responsible for:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>Assessing risk to affected individuals</li>
-                  <li>Notifying IMY within 72 hours where required (GDPR Article 33)</li>
+                  <li>Notifying IMY (Sweden) within 72 hours where required (GDPR Article 33)</li>
                   <li>Communicating breaches to affected clients when required (GDPR Article 34)</li>
                   <li>Documenting breach response and decisions</li>
                 </ul>
@@ -616,15 +633,10 @@ export function TermsOfService() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-[#E8EAE7] mb-3">21. General Provisions</h2>
             <div className="space-y-3 text-gray-700 dark:text-[#B7BAAE]">
               <p><span className="font-medium">Entire Agreement:</span> These Terms, Privacy Policy, Service Agreement, and DPA constitute the entire agreement.</p>
-
               <p><span className="font-medium">Severability:</span> If any provision is invalid, remaining provisions continue in full force.</p>
-
               <p><span className="font-medium">Waiver:</span> Failure to enforce any provision does not constitute a waiver.</p>
-
               <p><span className="font-medium">Relationship:</span> Parties are independent contractors. No employment, partnership, or agency relationship created.</p>
-
               <p><span className="font-medium">Electronic Signatures:</span> Electronic acceptance (clicking "I agree," creating account) constitutes legally binding signature.</p>
-
               <p><span className="font-medium">Language:</span> English version controls in case of conflicts with translations.</p>
             </div>
           </section>
@@ -638,8 +650,8 @@ export function TermsOfService() {
                 <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mb-2">Tailor Notebook</p>
                 <ul className="list-none space-y-1 ml-4">
                   <li><span className="font-medium">Operated by:</span> Vu Dong Lam Nguyen</li>
-                  <li><span className="font-medium">Organization number:</span> Sole proprietor</li>
-                  <li><span className="font-medium">Address:</span> [Your Business Address]</li>
+                  <li><span className="font-medium">Status:</span> Individual service provider (sole proprietor)</li>
+                  <li><span className="font-medium">Address:</span> Lisa-Fittko-Str 5, 10557 Berlin, Germany</li>
                 </ul>
 
                 <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mt-3 mb-2">Contact Methods:</p>
@@ -657,9 +669,10 @@ export function TermsOfService() {
 
                 <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mt-3">Business Hours:</p>
                 <p className="ml-4">Monday-Friday, 9:00-18:00 CET</p>
-              </div>
 
-              <p className="font-medium mt-4">Emergency Contact (urgent security or breach matters): lam.vudongnguyen@gmail.com or +49 15257431776</p>
+                <p className="font-medium text-gray-900 dark:text-[#E8EAE7] mt-3">Emergency Contact (urgent security or breach matters):</p>
+                <p className="ml-4">lam.vudongnguyen@gmail.com or +49 15257431776</p>
+              </div>
             </div>
           </section>
 
@@ -668,7 +681,7 @@ export function TermsOfService() {
               By using Tailor Notebook, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and the Privacy Policy.
             </p>
             <p className="text-center text-xs text-gray-500 dark:text-[#858585]">
-              Last updated: November 2025
+              Last updated: December 2025
             </p>
           </div>
         </div>
