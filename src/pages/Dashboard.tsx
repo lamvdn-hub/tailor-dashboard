@@ -306,7 +306,7 @@ export function Dashboard() {
                 <TableRow key={session.id}>
                   <TableCell>
                     <div className="flex items-center gap-2 group">
-                      <span className="text-lg font-mono text-gray-900 dark:text-white">
+                      <span className="text-gray-900 dark:text-white">
                         {session.display_id || '-'}
                       </span>
                       {session.display_id && (
