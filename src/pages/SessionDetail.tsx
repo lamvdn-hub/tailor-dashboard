@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MobileSelect } from '../components/MobileSelect';
@@ -44,6 +44,7 @@ export function SessionDetail() {
   const [savingTrousers, setSavingTrousers] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingSuitConfig, setSavingSuitConfig] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
   const [notesData, setNotesData] = useState({
     style_notes: '',
     client_requests: '',
@@ -63,6 +64,12 @@ export function SessionDetail() {
       loadSessionData();
     }
   }, [sessionId]);
+
+  function handleCopyOrderId(displayId: string) {
+    navigator.clipboard.writeText(displayId);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  }
 
   async function loadSessionData() {
     if (!sessionId) return;
@@ -446,7 +453,27 @@ export function SessionDetail() {
         <Button variant="secondary" onClick={() => navigate(`/clients/${session.client_id}`)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Session Details</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Session Details</h1>
+          {session.display_id && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xl font-mono font-bold text-gray-700 dark:text-gray-300">
+                Order #{session.display_id}
+              </span>
+              <button
+                onClick={() => handleCopyOrderId(session.display_id!)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-all"
+                title="Copy order number"
+              >
+                {showCopied ? (
+                  <span className="text-sm text-green-600 dark:text-green-400 font-semibold">Copied!</span>
+                ) : (
+                  <Copy className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Card>

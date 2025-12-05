@@ -45,11 +45,14 @@ export type Session = {
   id: string;
   client_id: string;
   garment_type: 'jacket' | 'trousers' | 'suit';
+  service_type?: 'MTM' | 'Bespoke' | null;
   fabric_id: string | null;
   status: 'active' | 'completed' | 'ready';
   style_notes: string | null;
   client_requests: string | null;
   adjustment_remarks: string | null;
+  display_id?: string | null;
+  display_id_normalized?: string | null;
   suit_type?: 'single_breasted' | 'double_breasted' | 'tuxedo' | null;
   lapel_type?: string | null;
   button_type?: string | null;

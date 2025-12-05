@@ -12,6 +12,7 @@ import { useToast } from '../hooks/useToast';
 import { supabase, Client, Fabric, MeasurementDefinition, Measurement } from '../lib/supabase';
 import { getMeasurementCategoriesForGarment, normalizeMeasurementName } from '../lib/measurementCategories';
 import { formatDate } from '../lib/dateUtils';
+import { generateDisplayId, normalizeDisplayId } from '../lib/displayIdUtils';
 
 interface MeasurementValue {
   definitionId: string;
@@ -268,6 +269,22 @@ export function NewSession() {
     setLoading(true);
     setErrors({});
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setErrors({ submit: 'User not authenticated' });
+      setLoading(false);
+      return;
+    }
+
+    let displayId: string;
+    try {
+      displayId = await generateDisplayId(user.id);
+    } catch (error) {
+      setErrors({ submit: 'Failed to generate order number' });
+      setLoading(false);
+      return;
+    }
+
     const sessionInsert: any = {
       client_id: formData.clientId,
       service_type: formData.serviceType,
@@ -276,6 +293,8 @@ export function NewSession() {
       style_notes: formData.styleNotes || null,
       client_requests: formData.clientRequests || null,
       adjustment_remarks: formData.adjustmentRemarks || null,
+      display_id: displayId,
+      display_id_normalized: normalizeDisplayId(displayId),
     };
 
     if (formData.garmentType === 'suit') {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Scissors, PackageCheck, Calendar, Trash2, PlusCircle, Package, CheckCircle } from 'lucide-react';
+import { Users, Scissors, PackageCheck, Calendar, Trash2, PlusCircle, Package, CheckCircle, Copy } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { StatusSelect } from '../components/StatusSelect';
@@ -30,6 +30,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedTab = localStorage.getItem('recentSessionsTab');
@@ -176,6 +177,12 @@ export function Dashboard() {
     });
   }
 
+  function handleCopyOrderId(displayId: string, sessionId: string) {
+    navigator.clipboard.writeText(displayId);
+    setCopiedId(sessionId);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
   const statCards = [
     { icon: Users, label: 'Total Clients', value: stats.totalClients, color: 'text-blue-600' },
     { icon: Scissors, label: 'Active Sessions', value: stats.activeSessions, color: 'text-green-600' },
@@ -285,6 +292,7 @@ export function Dashboard() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Order #</TableHead>
                 <TableHead>Client Name</TableHead>
                 <TableHead>Service Type</TableHead>
                 <TableHead>Garment Type</TableHead>
@@ -296,6 +304,26 @@ export function Dashboard() {
             <TableBody>
               {filteredSessions.map((session) => (
                 <TableRow key={session.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2 group">
+                      <span className="text-lg font-mono font-bold text-gray-900 dark:text-white">
+                        {session.display_id || '-'}
+                      </span>
+                      {session.display_id && (
+                        <button
+                          onClick={() => handleCopyOrderId(session.display_id!, session.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-all"
+                          title="Copy order number"
+                        >
+                          {copiedId === session.id ? (
+                            <span className="text-xs text-green-600 dark:text-green-400 font-semibold">Copied!</span>
+                          ) : (
+                            <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {session.client.first_name && session.client.last_name
                       ? `${session.client.first_name} ${session.client.last_name}`
