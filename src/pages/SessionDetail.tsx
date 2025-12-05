@@ -97,6 +97,9 @@ export function SessionDetail() {
 
   async function refreshSessionData() {
     if (!sessionId) return;
+
+    console.log('Loading session data for:', sessionId);
+
     const [sessionRes, measurementsRes, defsRes, photosRes] = await Promise.all([
       supabase
         .from('sessions')
@@ -121,7 +124,15 @@ export function SessionDetail() {
         .order('uploaded_at', { ascending: true }),
     ]);
 
+    console.log('Photos query result:', photosRes);
+
+    if (photosRes.error) {
+      console.error('Error loading photos:', photosRes.error);
+    }
+
     if (photosRes.data) {
+      console.log(`Found ${photosRes.data.length} photo(s) for this session`);
+
       const photosWithUrls = photosRes.data.map(photo => {
         const { data: fileUrl } = supabase.storage
           .from('session_photos')
@@ -131,13 +142,25 @@ export function SessionDetail() {
           .from('session_photos')
           .getPublicUrl(photo.thumbnail_path);
 
+        console.log('Photo URLs:', {
+          file_path: photo.file_path,
+          file_url: fileUrl.publicUrl,
+          thumbnail_path: photo.thumbnail_path,
+          thumbnail_url: thumbUrl.publicUrl,
+        });
+
         return {
           ...photo,
           file_url: fileUrl.publicUrl,
           thumbnail_url: thumbUrl.publicUrl,
         };
       });
+
       setPhotos(photosWithUrls);
+      console.log('Photos state updated with', photosWithUrls.length, 'photos');
+    } else {
+      console.log('No photos found for this session');
+      setPhotos([]);
     }
 
     if (sessionRes.data) {
@@ -576,6 +599,14 @@ export function SessionDetail() {
                   src={photo.thumbnail_url}
                   alt={`Garment photo ${index + 1}`}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Failed to load thumbnail:', photo.thumbnail_url);
+                    console.error('Photo data:', photo);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('Thumbnail loaded successfully:', photo.thumbnail_url);
+                  }}
                 />
 
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">

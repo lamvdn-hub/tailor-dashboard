@@ -286,6 +286,16 @@ export function NewSession() {
       return;
     }
 
+    const { data: userProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!userProfile) {
+      console.warn('User profile not found, will use null for uploaded_by');
+    }
+
     let displayId: string;
     try {
       displayId = await generateDisplayId(user.id);
@@ -484,48 +494,87 @@ export function NewSession() {
     }
 
     if (photos.length > 0) {
+      console.log(`Starting photo upload for ${photos.length} photo(s)...`);
       setUploadingPhotos(true);
+      let uploadedCount = 0;
+
       try {
-        for (const photo of photos) {
+        for (let i = 0; i < photos.length; i++) {
+          const photo = photos[i];
+          console.log(`Uploading photo ${i + 1}/${photos.length}...`);
+
           const timestamp = Date.now();
           const randomId = crypto.randomUUID();
 
           const filePath = `${sessionData.id}/${timestamp}_${randomId}.jpg`;
-          const { error: fileError } = await supabase.storage
+          console.log('Uploading full-size image to:', filePath);
+          console.log('File size:', photo.file.size, 'bytes');
+
+          const { data: fileData, error: fileError } = await supabase.storage
             .from('session_photos')
             .upload(filePath, photo.file, {
-              contentType: 'image/jpeg'
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false
             });
 
-          if (fileError) throw fileError;
+          if (fileError) {
+            console.error('File upload error:', fileError);
+            throw new Error(`Failed to upload image: ${fileError.message}`);
+          }
+
+          console.log('Full-size image uploaded successfully:', fileData);
 
           const thumbPath = `${sessionData.id}/thumb_${timestamp}_${randomId}.jpg`;
-          const { error: thumbError } = await supabase.storage
+          console.log('Uploading thumbnail to:', thumbPath);
+          console.log('Thumbnail size:', photo.thumbnail.size, 'bytes');
+
+          const { data: thumbData, error: thumbError } = await supabase.storage
             .from('session_photos')
             .upload(thumbPath, photo.thumbnail, {
-              contentType: 'image/jpeg'
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false
             });
 
-          if (thumbError) throw thumbError;
+          if (thumbError) {
+            console.error('Thumbnail upload error:', thumbError);
+            throw new Error(`Failed to upload thumbnail: ${thumbError.message}`);
+          }
 
-          const { error: metadataError } = await supabase
+          console.log('Thumbnail uploaded successfully:', thumbData);
+
+          console.log('Saving photo metadata to database...');
+          const { data: metadataData, error: metadataError } = await supabase
             .from('session_photos')
             .insert({
               session_id: sessionData.id,
               file_path: filePath,
               thumbnail_path: thumbPath,
               file_size: photo.file.size,
-              uploaded_by: user.id
-            });
+              uploaded_by: userProfile?.id || null
+            })
+            .select();
 
-          if (metadataError) throw metadataError;
+          if (metadataError) {
+            console.error('Metadata save error:', metadataError);
+            throw new Error(`Failed to save metadata: ${metadataError.message}`);
+          }
+
+          console.log('Metadata saved successfully:', metadataData);
+          uploadedCount++;
         }
+
+        console.log(`Successfully uploaded ${uploadedCount} photo(s)`);
+        showToast(`${uploadedCount} photo(s) uploaded successfully`, 'success');
       } catch (error) {
         console.error('Error uploading photos:', error);
-        showToast('Session saved but some photos failed to upload', 'warning');
+        showToast(`Photos upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
       } finally {
         setUploadingPhotos(false);
       }
+    } else {
+      console.log('No photos to upload');
     }
 
     setLoading(false);
