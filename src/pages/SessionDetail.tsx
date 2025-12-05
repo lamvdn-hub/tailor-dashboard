@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Camera, ZoomIn } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MobileSelect } from '../components/MobileSelect';
@@ -9,6 +9,7 @@ import { Textarea } from '../components/Textarea';
 import { SuitConfiguration } from '../components/SuitConfiguration';
 import { supabase, Session, Client, MeasurementDefinition } from '../lib/supabase';
 import { formatDate } from '../lib/dateUtils';
+import Lightbox from '../components/Lightbox';
 
 interface SessionWithClient extends Session {
   client: Client;
@@ -23,6 +24,18 @@ interface MeasurementValue {
   leftCm?: number | null;
   rightCm?: number | null;
   unitCm?: number | null;
+}
+
+interface SessionPhoto {
+  id: string;
+  session_id: string;
+  file_path: string;
+  thumbnail_path: string;
+  file_size: number;
+  uploaded_by: string | null;
+  uploaded_at: string;
+  file_url: string;
+  thumbnail_url: string;
 }
 
 export function SessionDetail() {
@@ -58,6 +71,9 @@ export function SessionDetail() {
     button_type: '',
     vent_type: '',
   });
+  const [photos, setPhotos] = useState<SessionPhoto[]>([]);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     if (sessionId) {
@@ -81,7 +97,7 @@ export function SessionDetail() {
 
   async function refreshSessionData() {
     if (!sessionId) return;
-    const [sessionRes, measurementsRes, defsRes] = await Promise.all([
+    const [sessionRes, measurementsRes, defsRes, photosRes] = await Promise.all([
       supabase
         .from('sessions')
         .select('*, client:clients(*), fabric:fabrics(name)')
@@ -98,7 +114,31 @@ export function SessionDetail() {
         .select('*')
         .order('section')
         .order('order_index'),
+      supabase
+        .from('session_photos')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('uploaded_at', { ascending: true }),
     ]);
+
+    if (photosRes.data) {
+      const photosWithUrls = photosRes.data.map(photo => {
+        const { data: fileUrl } = supabase.storage
+          .from('session_photos')
+          .getPublicUrl(photo.file_path);
+
+        const { data: thumbUrl } = supabase.storage
+          .from('session_photos')
+          .getPublicUrl(photo.thumbnail_path);
+
+        return {
+          ...photo,
+          file_url: fileUrl.publicUrl,
+          thumbnail_url: thumbUrl.publicUrl,
+        };
+      });
+      setPhotos(photosWithUrls);
+    }
 
     if (sessionRes.data) {
       setSession(sessionRes.data as SessionWithClient);
@@ -513,6 +553,44 @@ export function SessionDetail() {
         </div>
       </Card>
 
+      {photos.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Garment Photos</h2>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {photos.length} photo{photos.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {photos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className="relative aspect-square border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition group"
+                onClick={() => {
+                  setLightboxIndex(index);
+                  setShowLightbox(true);
+                }}
+              >
+                <img
+                  src={photo.thumbnail_url}
+                  alt={`Garment photo ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">
+                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+            Click photos to view full size
+          </p>
+        </Card>
+      )}
+
       {isSuit && (
         <Card>
           <div className="flex items-center justify-between mb-4">
@@ -751,6 +829,15 @@ export function SessionDetail() {
           </div>
         </div>
       </Card>
+
+      {showLightbox && photos.length > 0 && (
+        <Lightbox
+          photos={photos}
+          currentIndex={lightboxIndex}
+          onClose={() => setShowLightbox(false)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }

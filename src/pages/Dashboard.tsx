@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Scissors, PackageCheck, Calendar, Trash2, PlusCircle, Package, CheckCircle, Copy } from 'lucide-react';
+import { Users, Scissors, PackageCheck, Calendar, Trash2, PlusCircle, Package, CheckCircle, Copy, Camera } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { StatusSelect } from '../components/StatusSelect';
@@ -12,6 +12,7 @@ import { formatDate } from '../lib/dateUtils';
 
 interface SessionWithClient extends Session {
   client: Client;
+  photo_count?: number;
 }
 
 type TabFilter = 'all' | 'active' | 'ready' | 'completed';
@@ -69,7 +70,20 @@ export function Dashboard() {
     });
 
     if (recentRes.data) {
-      setRecentSessions(recentRes.data as SessionWithClient[]);
+      const sessionsWithPhotoCounts = await Promise.all(
+        recentRes.data.map(async (session) => {
+          const { count } = await supabase
+            .from('session_photos')
+            .select('*', { count: 'exact', head: true })
+            .eq('session_id', session.id);
+
+          return {
+            ...session,
+            photo_count: count || 0,
+          };
+        })
+      );
+      setRecentSessions(sessionsWithPhotoCounts as SessionWithClient[]);
     }
 
     setLoading(false);
@@ -309,6 +323,15 @@ export function Dashboard() {
                       <span className="text-gray-900 dark:text-white">
                         {session.display_id || '-'}
                       </span>
+                      {session.photo_count && session.photo_count > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full"
+                          title={`${session.photo_count} photo${session.photo_count !== 1 ? 's' : ''}`}
+                        >
+                          <Camera className="w-3 h-3" />
+                          {session.photo_count}
+                        </span>
+                      )}
                       {session.display_id && (
                         <button
                           onClick={() => handleCopyOrderId(session.display_id!, session.id)}

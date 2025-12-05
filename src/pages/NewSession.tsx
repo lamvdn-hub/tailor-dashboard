@@ -13,6 +13,8 @@ import { supabase, Client, Fabric, MeasurementDefinition, Measurement } from '..
 import { getMeasurementCategoriesForGarment, normalizeMeasurementName } from '../lib/measurementCategories';
 import { formatDate } from '../lib/dateUtils';
 import { generateDisplayId, normalizeDisplayId } from '../lib/displayIdUtils';
+import PhotoUpload from '../components/PhotoUpload';
+import { ProcessedPhoto, cleanupPhotoPreview } from '../lib/imageUtils';
 
 interface MeasurementValue {
   definitionId: string;
@@ -58,10 +60,18 @@ export function NewSession() {
   const [loadingMeasurements, setLoadingMeasurements] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toasts, showToast, removeToast } = useToast();
+  const [photos, setPhotos] = useState<ProcessedPhoto[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      photos.forEach(photo => cleanupPhotoPreview(photo.preview));
+    };
+  }, [photos]);
 
   async function loadData() {
     const [clientsRes, fabricsRes, defsRes] = await Promise.all([
@@ -473,6 +483,51 @@ export function NewSession() {
       }
     }
 
+    if (photos.length > 0) {
+      setUploadingPhotos(true);
+      try {
+        for (const photo of photos) {
+          const timestamp = Date.now();
+          const randomId = crypto.randomUUID();
+
+          const filePath = `${sessionData.id}/${timestamp}_${randomId}.jpg`;
+          const { error: fileError } = await supabase.storage
+            .from('session_photos')
+            .upload(filePath, photo.file, {
+              contentType: 'image/jpeg'
+            });
+
+          if (fileError) throw fileError;
+
+          const thumbPath = `${sessionData.id}/thumb_${timestamp}_${randomId}.jpg`;
+          const { error: thumbError } = await supabase.storage
+            .from('session_photos')
+            .upload(thumbPath, photo.thumbnail, {
+              contentType: 'image/jpeg'
+            });
+
+          if (thumbError) throw thumbError;
+
+          const { error: metadataError } = await supabase
+            .from('session_photos')
+            .insert({
+              session_id: sessionData.id,
+              file_path: filePath,
+              thumbnail_path: thumbPath,
+              file_size: photo.file.size,
+              uploaded_by: user.id
+            });
+
+          if (metadataError) throw metadataError;
+        }
+      } catch (error) {
+        console.error('Error uploading photos:', error);
+        showToast('Session saved but some photos failed to upload', 'warning');
+      } finally {
+        setUploadingPhotos(false);
+      }
+    }
+
     setLoading(false);
     navigate(`/sessions/${sessionData.id}`);
   }
@@ -668,6 +723,16 @@ export function NewSession() {
             />
           </div>
         </Card>
+
+        <Card>
+          <PhotoUpload photos={photos} onChange={setPhotos} maxPhotos={5} />
+        </Card>
+
+        {uploadingPhotos && (
+          <Card className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <p className="text-blue-700 dark:text-blue-300">Uploading photos...</p>
+          </Card>
+        )}
 
         {errors.submit && (
           <Card className="bg-red-50 border border-red-200">
