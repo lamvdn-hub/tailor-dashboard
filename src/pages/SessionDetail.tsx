@@ -500,13 +500,31 @@ export function SessionDetail() {
 
     setUploadingPhoto(true);
 
+    let successCount = 0;
+    let failureCount = 0;
+    const failedFiles: string[] = [];
+
     try {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!userProfile) {
+        showToast('User profile not found. Please try logging out and back in.', 'error');
+        setUploadingPhoto(false);
+        return;
+      }
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
         const validation = validatePhotoFile(file);
         if (!validation.valid) {
           showToast(validation.error || 'Invalid file', 'error');
+          failureCount++;
+          failedFiles.push(file.name);
           continue;
         }
 
@@ -527,6 +545,8 @@ export function SessionDetail() {
 
         if (fileError) {
           showToast(`Failed to upload ${file.name}: ${fileError.message}`, 'error');
+          failureCount++;
+          failedFiles.push(file.name);
           continue;
         }
 
@@ -541,6 +561,8 @@ export function SessionDetail() {
         if (thumbError) {
           showToast(`Failed to upload thumbnail: ${thumbError.message}`, 'error');
           await supabase.storage.from('session_photos').remove([filePath]);
+          failureCount++;
+          failedFiles.push(file.name);
           continue;
         }
 
@@ -551,18 +573,29 @@ export function SessionDetail() {
             file_path: filePath,
             thumbnail_path: thumbPath,
             file_size: processed.file.size,
-            uploaded_by: user.id,
+            uploaded_by: userProfile.id,
           });
 
         if (metadataError) {
           showToast(`Failed to save photo metadata: ${metadataError.message}`, 'error');
           await supabase.storage.from('session_photos').remove([filePath, thumbPath]);
+          failureCount++;
+          failedFiles.push(file.name);
           continue;
         }
+
+        successCount++;
       }
 
       await refreshSessionData();
-      showToast('Photos uploaded successfully', 'success');
+
+      if (successCount > 0 && failureCount === 0) {
+        showToast(`${successCount} photo${successCount > 1 ? 's' : ''} uploaded successfully`, 'success');
+      } else if (successCount > 0 && failureCount > 0) {
+        showToast(`${successCount} photo${successCount > 1 ? 's' : ''} uploaded, ${failureCount} failed`, 'error');
+      } else if (failureCount > 0) {
+        showToast(`Failed to upload ${failureCount} photo${failureCount > 1 ? 's' : ''}`, 'error');
+      }
     } catch (error) {
       console.error('Error uploading photos:', error);
       showToast('Failed to upload photos', 'error');
