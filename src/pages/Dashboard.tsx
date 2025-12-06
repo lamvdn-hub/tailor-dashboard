@@ -320,16 +320,20 @@ export function Dashboard() {
                 <TableRow key={session.id}>
                   <TableCell>
                     <div className="flex items-center gap-2 group">
-                      <span className="text-gray-900 dark:text-white">
+                      <span className="text-gray-900 dark:text-white font-medium">
                         {session.display_id || '-'}
                       </span>
-                      {session.photo_count && session.photo_count > 0 && (
+                      {session.photo_count !== undefined && (
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full"
-                          title={`${session.photo_count} photo${session.photo_count !== 1 ? 's' : ''}`}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border transition-all ${
+                            session.photo_count > 0
+                              ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
+                              : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-500'
+                          }`}
+                          title={`${session.photo_count} photo${session.photo_count !== 1 ? 's' : ''} attached`}
                         >
-                          <Camera className="w-3 h-3" />
-                          {session.photo_count}
+                          <Camera className={`w-3 h-3 ${session.photo_count > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-600'}`} />
+                          <span className="min-w-[8px] text-center">{session.photo_count}</span>
                         </span>
                       )}
                       {session.display_id && (
