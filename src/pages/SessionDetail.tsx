@@ -142,28 +142,34 @@ export function SessionDetail() {
     if (photosRes.data) {
       console.log(`Found ${photosRes.data.length} photo(s) for this session`);
 
-      const photosWithUrls = photosRes.data.map(photo => {
-        const { data: fileUrl } = supabase.storage
-          .from('session_photos')
-          .getPublicUrl(photo.file_path);
+      const photosWithUrls = await Promise.all(
+        photosRes.data.map(async (photo) => {
+          const { data: fileUrl, error: fileError } = await supabase.storage
+            .from('session_photos')
+            .createSignedUrl(photo.file_path, 3600);
 
-        const { data: thumbUrl } = supabase.storage
-          .from('session_photos')
-          .getPublicUrl(photo.thumbnail_path);
+          const { data: thumbUrl, error: thumbError } = await supabase.storage
+            .from('session_photos')
+            .createSignedUrl(photo.thumbnail_path, 3600);
 
-        console.log('Photo URLs:', {
-          file_path: photo.file_path,
-          file_url: fileUrl.publicUrl,
-          thumbnail_path: photo.thumbnail_path,
-          thumbnail_url: thumbUrl.publicUrl,
-        });
+          if (fileError || thumbError) {
+            console.error('Error creating signed URLs:', { fileError, thumbError });
+          }
 
-        return {
-          ...photo,
-          file_url: fileUrl.publicUrl,
-          thumbnail_url: thumbUrl.publicUrl,
-        };
-      });
+          console.log('Photo URLs:', {
+            file_path: photo.file_path,
+            file_url: fileUrl?.signedUrl,
+            thumbnail_path: photo.thumbnail_path,
+            thumbnail_url: thumbUrl?.signedUrl,
+          });
+
+          return {
+            ...photo,
+            file_url: fileUrl?.signedUrl || '',
+            thumbnail_url: thumbUrl?.signedUrl || '',
+          };
+        })
+      );
 
       setPhotos(photosWithUrls);
       console.log('Photos state updated with', photosWithUrls.length, 'photos');
