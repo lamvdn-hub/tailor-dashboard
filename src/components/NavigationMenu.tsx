@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, LayoutDashboard, Users, Scissors, CheckSquare, MessageSquare, FileText } from 'lucide-react';
+//import { Menu, X, Search, LayoutDashboard, Users, Scissors, CheckSquare, MessageSquare, FileText } from 'lucide-react';
+import { Menu, X, Search, LayoutDashboard, Users, CheckSquare } from 'lucide-react';
 import { GlobalSearchResults } from './GlobalSearchResults';
 
 interface NavigationMenuProps {
