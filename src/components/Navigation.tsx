@@ -19,7 +19,7 @@ export function Navigation({ currentPage }: NavigationProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
     { id: 'clients', label: 'Clients', path: '/clients' },
-    { id: 'fabrics', label: 'Fabrics', path: '/fabrics' },
+    //{ id: 'fabrics', label: 'Fabrics', path: '/fabrics' },
     { id: 'tasks', label: 'Tasks', path: '/tasks' },
     { id: 'queries', label: 'Queries', path: '/queries' },
     { id: 'reports', label: 'Reports', path: '/reports' },
