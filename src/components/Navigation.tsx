@@ -21,8 +21,8 @@ export function Navigation({ currentPage }: NavigationProps) {
     { id: 'clients', label: 'Clients', path: '/clients' },
     //{ id: 'fabrics', label: 'Fabrics', path: '/fabrics' },
     { id: 'tasks', label: 'Tasks', path: '/tasks' },
-    { id: 'queries', label: 'Queries', path: '/queries' },
-    { id: 'reports', label: 'Reports', path: '/reports' },
+    //{ id: 'queries', label: 'Queries', path: '/queries' },
+    //{ id: 'reports', label: 'Reports', path: '/reports' },
   ];
 
   const handleSearchResultClick = (type: string, id: string) => {
