@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+
+// With "Fabrics", "Queries", and "Reports" page
 //import { Menu, X, Search, LayoutDashboard, Users, Scissors, CheckSquare, MessageSquare, FileText } from 'lucide-react';
+
+// Without
 import { Menu, X, Search, LayoutDashboard, Users, CheckSquare } from 'lucide-react';
+
 import { GlobalSearchResults } from './GlobalSearchResults';
 
 interface NavigationMenuProps {
