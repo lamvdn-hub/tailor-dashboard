@@ -15,7 +15,7 @@ interface SessionWithClient extends Session {
   photo_count?: number;
 }
 
-type TabFilter = 'all' | 'active' | 'ready' | 'completed';
+type TabFilter = 'all' | 'active' | 'fitting' | 'pickup' | 'completed';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export function Dashboard() {
 
   useEffect(() => {
     const savedTab = localStorage.getItem('recentSessionsTab');
-    if (savedTab && ['all', 'active', 'ready', 'completed'].includes(savedTab)) {
+    if (savedTab && ['all', 'active', 'fitting', 'pickup', 'completed'].includes(savedTab)) {
       setActiveTab(savedTab as TabFilter);
     }
     loadDashboardData();
@@ -113,28 +113,111 @@ export function Dashboard() {
     setDeletingId(null);
   }
 
+  function normalizeStatus(status: string): string {
+    const normalized = status.toLowerCase().trim();
+
+    if (normalized === 'received' || normalized === 'in progress') {
+      return 'active';
+    }
+    if (normalized === 'ready for fitting' || normalized === 'ready') {
+      return 'fitting';
+    }
+    if (normalized === 'ready for pickup') {
+      return 'pickup';
+    }
+
+    return status;
+  }
+
+  function isFittingStatus(status: string): boolean {
+    const normalized = status.toLowerCase().trim();
+    return normalized === 'fitting' || normalized === 'fitting_1' || normalized === 'fitting_2' ||
+           normalized === 'fitting #1' || normalized === 'fitting #2' ||
+           normalized === 'ready for fitting' || normalized === 'ready';
+  }
+
   function handleTabClick(tab: TabFilter) {
     setActiveTab(tab);
     localStorage.setItem('recentSessionsTab', tab);
   }
 
-  const filteredSessions = activeTab === 'all'
-    ? recentSessions
-    : recentSessions.filter(session => session.status === activeTab);
+  const filteredSessions = recentSessions.filter(session => {
+    if (activeTab === 'all') return true;
+
+    const normalizedStatus = normalizeStatus(session.status);
+
+    if (activeTab === 'fitting') {
+      return isFittingStatus(session.status);
+    }
+
+    if (activeTab === 'active') {
+      return normalizedStatus.toLowerCase() === 'active';
+    }
+
+    if (activeTab === 'pickup') {
+      return normalizedStatus.toLowerCase() === 'pickup' || session.status.toLowerCase() === 'ready for pickup';
+    }
+
+    if (activeTab === 'completed') {
+      return normalizedStatus.toLowerCase() === 'completed';
+    }
+
+    return false;
+  });
 
   const allCount = recentSessions.length;
-  const activeCount = recentSessions.filter(s => s.status === 'active').length;
-  const readyCount = recentSessions.filter(s => s.status === 'ready').length;
-  const completedCount = recentSessions.filter(s => s.status === 'completed').length;
+  const activeCount = recentSessions.filter(s => normalizeStatus(s.status).toLowerCase() === 'active').length;
+  const fittingCount = recentSessions.filter(s => isFittingStatus(s.status)).length;
+  const pickupCount = recentSessions.filter(s => {
+    const normalized = normalizeStatus(s.status).toLowerCase();
+    return normalized === 'pickup' || s.status.toLowerCase() === 'ready for pickup';
+  }).length;
+  const completedCount = recentSessions.filter(s => normalizeStatus(s.status).toLowerCase() === 'completed').length;
 
   const tabs = [
     { id: 'all' as TabFilter, label: 'All', count: allCount },
     { id: 'active' as TabFilter, label: 'Active', count: activeCount },
-    { id: 'ready' as TabFilter, label: 'Ready', count: readyCount },
+    { id: 'fitting' as TabFilter, label: 'Fitting', count: fittingCount },
+    { id: 'pickup' as TabFilter, label: 'Pickup', count: pickupCount },
     { id: 'completed' as TabFilter, label: 'Completed', count: completedCount },
   ];
 
-  async function handleStatusChange(sessionId: string, newStatus: 'active' | 'completed' | 'ready') {
+  function getStatusOptionsForSession(session: SessionWithClient) {
+    const serviceType = (session.service_type || 'MTM').toLowerCase().trim();
+
+    if (serviceType === 'mtm' || serviceType === 'made-to-measure') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (serviceType === 'bespoke') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting_1', label: 'Fitting #1' },
+        { value: 'fitting_2', label: 'Fitting #2' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (serviceType === 'alteration' || serviceType === 'alterations') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    }
+
+    return [
+      { value: 'active', label: 'Active' },
+      { value: 'fitting', label: 'Fitting' },
+      { value: 'pickup', label: 'Pickup' },
+      { value: 'completed', label: 'Completed' },
+    ];
+  }
+
+  async function handleStatusChange(sessionId: string, newStatus: string) {
     setUpdatingStatusId(sessionId);
 
     const previousSessions = [...recentSessions];
@@ -163,8 +246,15 @@ export function Dashboard() {
     setUpdatingStatusId(null);
 
     if (oldStatus !== newStatus) {
-      const statusLabels = { active: 'Active', ready: 'Ready', completed: 'Completed' };
-      showToast(`Session moved to ${statusLabels[newStatus]}`, 'success');
+      const statusLabels: { [key: string]: string } = {
+        active: 'Active',
+        fitting: 'Fitting',
+        fitting_1: 'Fitting #1',
+        fitting_2: 'Fitting #2',
+        pickup: 'Pickup',
+        completed: 'Completed'
+      };
+      showToast(`Session moved to ${statusLabels[newStatus] || newStatus}`, 'success');
     }
   }
 
@@ -283,7 +373,16 @@ export function Dashboard() {
                 </div>
               </>
             )}
-            {activeTab === 'ready' && (
+            {activeTab === 'fitting' && (
+              <>
+                <Scissors className="w-16 h-16 text-gray-400" />
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No sessions in fitting</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Sessions scheduled for fittings will appear here</p>
+                </div>
+              </>
+            )}
+            {activeTab === 'pickup' && (
               <>
                 <Package className="w-16 h-16 text-gray-400" />
                 <div className="text-center">
@@ -363,12 +462,8 @@ export function Dashboard() {
                     <div className={updatingStatusId === session.id ? 'opacity-50 pointer-events-none' : ''}>
                       <StatusSelect
                         value={session.status}
-                        onChange={(value) => handleStatusChange(session.id, value as 'active' | 'completed' | 'ready')}
-                        options={[
-                          { value: 'active', label: 'Active' },
-                          { value: 'ready', label: 'Ready' },
-                          { value: 'completed', label: 'Completed' },
-                        ]}
+                        onChange={(value) => handleStatusChange(session.id, value)}
+                        options={getStatusOptionsForSession(session)}
                       />
                     </div>
                   </TableCell>

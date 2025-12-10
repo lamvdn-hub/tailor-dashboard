@@ -492,7 +492,42 @@ export function SessionDetail() {
     setIsEditingSuitConfig(false);
   }
 
-  async function updateStatus(newStatus: 'active' | 'completed' | 'ready') {
+  function getStatusOptions(serviceType: string) {
+    const normalizedServiceType = serviceType.toLowerCase().trim();
+
+    if (normalizedServiceType === 'mtm' || normalizedServiceType === 'made-to-measure') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (normalizedServiceType === 'bespoke') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting_1', label: 'Fitting #1' },
+        { value: 'fitting_2', label: 'Fitting #2' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (normalizedServiceType === 'alteration' || normalizedServiceType === 'alterations') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    }
+
+    return [
+      { value: 'active', label: 'Active' },
+      { value: 'fitting', label: 'Fitting' },
+      { value: 'pickup', label: 'Pickup' },
+      { value: 'completed', label: 'Completed' },
+    ];
+  }
+
+  async function updateStatus(newStatus: string) {
     await supabase
       .from('sessions')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
@@ -727,12 +762,8 @@ export function SessionDetail() {
             <MobileSelect
               label="Status"
               value={session.status}
-              onChange={(value) => updateStatus(value as 'active' | 'completed' | 'ready')}
-              options={[
-                { value: 'active', label: 'Active' },
-                { value: 'ready', label: 'Ready for Pickup' },
-                { value: 'completed', label: 'Completed' },
-              ]}
+              onChange={(value) => updateStatus(value)}
+              options={getStatusOptions(session.service_type || 'MTM')}
             />
           </div>
         </div>

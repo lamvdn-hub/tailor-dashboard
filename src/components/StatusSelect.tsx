@@ -88,16 +88,24 @@ export function StatusSelect({ value, onChange, options }: StatusSelectProps) {
   const displayText = selectedOption ? selectedOption.label : '';
 
   const getStatusClasses = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
-      case 'ready':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
-      case 'active':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+    const normalizedStatus = status.toLowerCase().trim();
+
+    if (normalizedStatus === 'completed') {
+      return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
     }
+    if (normalizedStatus === 'pickup' || normalizedStatus === 'ready for pickup') {
+      return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/40';
+    }
+    if (normalizedStatus === 'active') {
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/40';
+    }
+    if (normalizedStatus === 'fitting' || normalizedStatus === 'fitting_1' || normalizedStatus === 'fitting_2' ||
+        normalizedStatus === 'fitting #1' || normalizedStatus === 'fitting #2' ||
+        normalizedStatus === 'ready for fitting' || normalizedStatus === 'ready') {
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/40';
+    }
+
+    return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
   };
 
   const handleSelect = (optionValue: string) => {
