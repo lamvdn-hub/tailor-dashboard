@@ -51,6 +51,7 @@ function getStepIndex(status: string, steps: { key: string; label: string }[]) {
 function StatusTimeline({ status, serviceType }: { status: string; serviceType: string }) {
   const steps = getStatusSteps(serviceType);
   const currentIndex = getStepIndex(status, steps);
+  const isOrderCompleted = status === 'completed';
 
   return (
     <div className="py-6">
@@ -59,8 +60,8 @@ function StatusTimeline({ status, serviceType }: { status: string; serviceType: 
 
         <div className="space-y-6">
           {steps.map((step, index) => {
-            const isCompleted = index < currentIndex;
-            const isCurrent = index === currentIndex;
+            const isCompleted = isOrderCompleted || index < currentIndex;
+            const isCurrent = !isOrderCompleted && index === currentIndex;
             const isPending = index > currentIndex;
 
             return (
