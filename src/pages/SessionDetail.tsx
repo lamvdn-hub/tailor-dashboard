@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Camera, ZoomIn, Upload, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Copy, Camera, ZoomIn, Upload, Trash2, Link2, Check } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MobileSelect } from '../components/MobileSelect';
@@ -18,6 +18,7 @@ import Lightbox from '../components/Lightbox';
 interface SessionWithClient extends Session {
   client: Client;
   fabric?: { name: string } | null;
+  status_token?: string;
 }
 
 interface MeasurementValue {
@@ -65,6 +66,7 @@ export function SessionDetail() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingSuitConfig, setSavingSuitConfig] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
+  const [showStatusLinkCopied, setShowStatusLinkCopied] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [notesData, setNotesData] = useState({
@@ -94,6 +96,14 @@ export function SessionDetail() {
     navigator.clipboard.writeText(displayId);
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
+  }
+
+  function handleCopyStatusLink() {
+    if (!session?.status_token) return;
+    const statusUrl = `${window.location.origin}/status/${session.status_token}`;
+    navigator.clipboard.writeText(statusUrl);
+    setShowStatusLinkCopied(true);
+    setTimeout(() => setShowStatusLinkCopied(false), 2000);
   }
 
   async function loadSessionData() {
@@ -768,6 +778,41 @@ export function SessionDetail() {
           </div>
         </div>
       </Card>
+
+      {session.status_token && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#506B4D]/10 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-[#506B4D]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Customer Status Tracking</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Share this link with your customer to track order progress
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={handleCopyStatusLink}
+              className="min-w-[120px]"
+            >
+              {showStatusLinkCopied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-600" />
+                  <span className="text-green-600">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card>
         <div className="flex items-center justify-between mb-4">

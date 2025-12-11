@@ -21,6 +21,7 @@ import { UpdatePassword } from './pages/UpdatePassword';
 import { ProfileSecurity } from './pages/ProfileSecurity';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
+import { OrderStatus } from './pages/OrderStatus';
 
 function PasswordRecoveryHandler() {
   const { isPasswordRecovery } = useAuth();
@@ -57,7 +58,7 @@ function AppRoutes() {
   }
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/password-reset' || location.pathname === '/update-password';
-  const isPublicPage = location.pathname === '/privacy-policy' || location.pathname === '/terms-of-service';
+  const isPublicPage = location.pathname === '/privacy-policy' || location.pathname === '/terms-of-service' || location.pathname.startsWith('/status/');
 
   return (
     <>
@@ -70,6 +71,7 @@ function AppRoutes() {
           <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/status/:token" element={<OrderStatus />} />
           <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
         </Routes>
       ) : (
