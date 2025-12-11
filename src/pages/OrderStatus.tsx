@@ -15,10 +15,10 @@ interface OrderStatusData {
 }
 
 const SHOP_INFO = {
-  name: 'W.B.B. Tailor',
+  name: 'Clearmind Tailor',
   address: '123 Savile Row, London W1S 3PR',
-  phone: '+44 20 1234 5678',
-  email: 'info@wbbtailor.com',
+  phone: '+49 12 3456 789',
+  email: 'info@clear.com',
   hours: 'Mon-Fri: 9am-6pm, Sat: 10am-4pm',
   mapsUrl: 'https://maps.google.com/?q=Savile+Row+London',
 };
