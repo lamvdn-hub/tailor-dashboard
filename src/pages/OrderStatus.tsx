@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { CheckCircle2, Circle, Clock, MapPin, Phone, Mail, ExternalLink, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatDate } from '../lib/dateUtils';
@@ -246,9 +246,9 @@ export function OrderStatus() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-lg mx-auto px-4 py-4">
-          <Link to="/" className="text-xl font-bold text-[#506B4D]">
-            {SHOP_INFO.name}
-          </Link>
+          <div className="text-xl font-bold text-[#506B4D]">
+            [Name]
+          </div>
         </div>
       </header>
 
