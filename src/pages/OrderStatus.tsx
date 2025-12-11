@@ -18,7 +18,7 @@ const SHOP_INFO = {
   name: 'Clearmind Tailor',
   address: '123 Savile Row, London W1S 3PR',
   phone: '+49 12 3456 789',
-  email: 'info@clear.com',
+  email: 'info@clearai.com',
   hours: 'Mon-Fri: 9am-6pm, Sat: 10am-4pm',
   mapsUrl: 'https://maps.google.com/?q=Savile+Row+London',
 };
