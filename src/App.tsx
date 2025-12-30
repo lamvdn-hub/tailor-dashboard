@@ -22,6 +22,7 @@ import { ProfileSecurity } from './pages/ProfileSecurity';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { OrderStatus } from './pages/OrderStatus';
+import { VisualMeasurements } from './pages/VisualMeasurements';
 
 function PasswordRecoveryHandler() {
   const { isPasswordRecovery } = useAuth();
@@ -104,6 +105,7 @@ function ProtectedLayout() {
           <Route path="/sessions/new" element={<NewSession />} />
           <Route path="/clients/:clientId/sessions/new" element={<NewSession />} />
           <Route path="/sessions/:sessionId" element={<SessionDetail />} />
+          <Route path="/sessions/:sessionId/body-measurements" element={<VisualMeasurements />} />
           <Route path="/fabrics" element={<Fabrics />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/queries" element={<Queries />} />

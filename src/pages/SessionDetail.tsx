@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Camera, ZoomIn, Upload, Trash2, Link2, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Camera, ZoomIn, Upload, Trash2, Link2, Check, User } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MobileSelect } from '../components/MobileSelect';
@@ -813,6 +813,25 @@ export function SessionDetail() {
           </div>
         </Card>
       )}
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#506B4D]/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-[#506B4D]" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Visual Body Measurements</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Interactive body diagram for taking accurate measurements with visual guides
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => navigate(`/sessions/${sessionId}/body-measurements`)}>
+            Open Diagram
+          </Button>
+        </div>
+      </Card>
 
       <Card>
         <div className="flex items-center justify-between mb-4">
