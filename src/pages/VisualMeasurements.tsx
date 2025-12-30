@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, Check, AlertTriangle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { Card } from '../components/Card';
@@ -7,20 +7,17 @@ import { Input } from '../components/Input';
 import { BodyDiagram } from '../components/BodyDiagram';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import { supabase } from '../lib/supabase';
+import { supabase, MeasurementDefinition } from '../lib/supabase';
 import {
   MEASUREMENT_POINTS,
-  CATEGORIES,
   MeasurementPoint,
-  getMeasurementsByCategory,
   isValueOutOfRange,
 } from '../lib/bodyMeasurements';
-
-interface StoredMeasurement {
-  id: string;
-  measurement_id: string;
-  value: number;
-}
+import {
+  GarmentType,
+  getDiagramPointIdsForGarment,
+  getAllMappingsForPoint,
+} from '../lib/garmentMeasurementMapping';
 
 interface ClientInfo {
   id: string;
@@ -29,25 +26,83 @@ interface ClientInfo {
   last_name?: string;
 }
 
+interface SessionInfo {
+  garment_type: GarmentType;
+  client: ClientInfo;
+}
+
+interface StoredMeasurement {
+  id: string;
+  measurement_definition_id: string;
+  measurement_name: string;
+  unit_cm: number | null;
+  section: string;
+}
+
+interface DiagramCategory {
+  id: string;
+  name: string;
+  points: MeasurementPoint[];
+}
+
 export function VisualMeasurements() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
   const { toasts, showToast, removeToast } = useToast();
 
-  const [client, setClient] = useState<ClientInfo | null>(null);
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [definitions, setDefinitions] = useState<MeasurementDefinition[]>([]);
+  const [storedMeasurements, setStoredMeasurements] = useState<StoredMeasurement[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<MeasurementPoint | null>(null);
-  const [measurements, setMeasurements] = useState<Record<string, number>>({});
-  const [storedMeasurements, setStoredMeasurements] = useState<Record<string, StoredMeasurement>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['torso']));
   const [inputValue, setInputValue] = useState('');
+  const [inputValueRight, setInputValueRight] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [filteredPoints, setFilteredPoints] = useState<MeasurementPoint[]>([]);
+  const [categories, setCategories] = useState<DiagramCategory[]>([]);
 
   useEffect(() => {
     if (sessionId) {
       loadSessionData();
     }
   }, [sessionId]);
+
+  useEffect(() => {
+    if (session) {
+      const validPointIds = getDiagramPointIdsForGarment(session.garment_type);
+      const points = MEASUREMENT_POINTS.filter(p => validPointIds.has(p.id));
+      setFilteredPoints(points);
+
+      const categoryMap = new Map<string, MeasurementPoint[]>();
+      points.forEach(point => {
+        const existing = categoryMap.get(point.category) || [];
+        existing.push(point);
+        categoryMap.set(point.category, existing);
+      });
+
+      const categoryNames: Record<string, string> = {
+        torso: 'Torso',
+        arms: 'Arms',
+        legs: 'Legs',
+        other: 'Other',
+      };
+
+      const cats: DiagramCategory[] = [];
+      ['torso', 'arms', 'legs', 'other'].forEach(catId => {
+        const catPoints = categoryMap.get(catId);
+        if (catPoints && catPoints.length > 0) {
+          cats.push({
+            id: catId,
+            name: categoryNames[catId],
+            points: catPoints,
+          });
+        }
+      });
+      setCategories(cats);
+    }
+  }, [session]);
 
   async function loadSessionData() {
     if (!sessionId) return;
@@ -56,7 +111,7 @@ export function VisualMeasurements() {
 
     const { data: sessionData, error: sessionError } = await supabase
       .from('sessions')
-      .select('client_id, client:clients(id, name, first_name, last_name)')
+      .select('garment_type, client:clients(id, name, first_name, last_name)')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -67,112 +122,198 @@ export function VisualMeasurements() {
     }
 
     const clientData = sessionData.client as ClientInfo;
-    setClient(clientData);
+    setSession({
+      garment_type: sessionData.garment_type as GarmentType,
+      client: clientData,
+    });
+
+    const { data: defsData } = await supabase
+      .from('measurement_definitions')
+      .select('*')
+      .order('section')
+      .order('order_index');
+
+    if (defsData) {
+      setDefinitions(defsData);
+    }
 
     const { data: measurementsData } = await supabase
       .from('measurements')
-      .select('id, measurement_name, unit_cm')
-      .eq('session_id', sessionId)
-      .like('measurement_name', 'body_%');
+      .select('id, measurement_definition_id, measurement_name, unit_cm, section')
+      .eq('session_id', sessionId);
 
     if (measurementsData) {
-      const loadedMeasurements: Record<string, number> = {};
-      const loadedStoredMeasurements: Record<string, StoredMeasurement> = {};
-
-      measurementsData.forEach(m => {
-        const pointId = m.measurement_name.replace('body_', '');
-        if (m.unit_cm !== null) {
-          loadedMeasurements[pointId] = Number(m.unit_cm);
-          loadedStoredMeasurements[pointId] = {
-            id: pointId,
-            measurement_id: m.id,
-            value: Number(m.unit_cm),
-          };
-        }
-      });
-
-      setMeasurements(loadedMeasurements);
-      setStoredMeasurements(loadedStoredMeasurements);
+      setStoredMeasurements(measurementsData as StoredMeasurement[]);
     }
 
     setLoading(false);
   }
 
-  function handleSelectPoint(point: MeasurementPoint) {
-    setSelectedPoint(point);
-    setInputValue(measurements[point.id]?.toString() || '');
+  function getDefinitionForMapping(definitionName: string, section: string): MeasurementDefinition | undefined {
+    return definitions.find(d => d.name === definitionName && d.section === section);
   }
 
-  function handleInputChange(value: string) {
-    setInputValue(value);
+  function getStoredValueForDefinition(definitionId: string, suffix?: 'L' | 'R'): StoredMeasurement | undefined {
+    const definition = definitions.find(d => d.id === definitionId);
+    if (!definition) return undefined;
+
+    if (suffix) {
+      const measurementName = `${definition.name} (${suffix})`;
+      return storedMeasurements.find(m => m.measurement_name === measurementName);
+    }
+
+    return storedMeasurements.find(m =>
+      m.measurement_definition_id === definitionId || m.measurement_name === definition.name
+    );
+  }
+
+  function isPointCompleted(pointId: string): boolean {
+    if (!session) return false;
+    const mappings = getAllMappingsForPoint(pointId, session.garment_type);
+
+    for (const mapping of mappings) {
+      const definition = getDefinitionForMapping(mapping.definitionName, mapping.section);
+      if (!definition) continue;
+
+      if (mapping.isPaired) {
+        const leftVal = getStoredValueForDefinition(definition.id, 'L');
+        const rightVal = getStoredValueForDefinition(definition.id, 'R');
+        if (leftVal?.unit_cm != null || rightVal?.unit_cm != null) return true;
+      } else {
+        const val = getStoredValueForDefinition(definition.id);
+        if (val?.unit_cm != null) return true;
+      }
+    }
+    return false;
+  }
+
+  function getCurrentValueForPoint(pointId: string): { left?: number; right?: number; single?: number } {
+    if (!session) return {};
+    const mappings = getAllMappingsForPoint(pointId, session.garment_type);
+
+    for (const mapping of mappings) {
+      const definition = getDefinitionForMapping(mapping.definitionName, mapping.section);
+      if (!definition) continue;
+
+      if (mapping.isPaired) {
+        const leftVal = getStoredValueForDefinition(definition.id, 'L');
+        const rightVal = getStoredValueForDefinition(definition.id, 'R');
+        return {
+          left: leftVal?.unit_cm ?? undefined,
+          right: rightVal?.unit_cm ?? undefined,
+        };
+      } else {
+        const val = getStoredValueForDefinition(definition.id);
+        return { single: val?.unit_cm ?? undefined };
+      }
+    }
+    return {};
+  }
+
+  function isPairedMeasurement(pointId: string): boolean {
+    if (!session) return false;
+    const mappings = getAllMappingsForPoint(pointId, session.garment_type);
+    return mappings.some(m => m.isPaired);
+  }
+
+  function handleSelectPoint(point: MeasurementPoint) {
+    setSelectedPoint(point);
+    const values = getCurrentValueForPoint(point.id);
+    if (isPairedMeasurement(point.id)) {
+      setInputValue(values.left?.toString() || '');
+      setInputValueRight(values.right?.toString() || '');
+    } else {
+      setInputValue(values.single?.toString() || '');
+      setInputValueRight('');
+    }
   }
 
   async function handleSaveMeasurement() {
-    if (!selectedPoint || !sessionId) return;
+    if (!selectedPoint || !sessionId || !session) return;
 
-    const numValue = parseFloat(inputValue);
-    if (isNaN(numValue) || numValue <= 0) {
-      showToast('Please enter a valid measurement value', 'error');
+    const mappings = getAllMappingsForPoint(selectedPoint.id, session.garment_type);
+    if (mappings.length === 0) {
+      showToast('No mapping found for this measurement', 'error');
       return;
     }
 
     setSaving(true);
 
-    const measurementName = `body_${selectedPoint.id}`;
-    const stored = storedMeasurements[selectedPoint.id];
+    for (const mapping of mappings) {
+      const definition = getDefinitionForMapping(mapping.definitionName, mapping.section);
+      if (!definition) continue;
 
-    if (stored) {
-      const { error } = await supabase
-        .from('measurements')
-        .update({ unit_cm: numValue })
-        .eq('id', stored.measurement_id);
+      if (mapping.isPaired) {
+        const leftValue = inputValue ? parseFloat(inputValue) : null;
+        const rightValue = inputValueRight ? parseFloat(inputValueRight) : null;
 
-      if (error) {
-        showToast('Failed to update measurement', 'error');
-        setSaving(false);
-        return;
+        if (leftValue !== null) {
+          await saveMeasurementValue(definition, leftValue, 'L', mapping.section);
+        }
+        if (rightValue !== null) {
+          await saveMeasurementValue(definition, rightValue, 'R', mapping.section);
+        }
+      } else {
+        const value = inputValue ? parseFloat(inputValue) : null;
+        if (value !== null) {
+          await saveMeasurementValue(definition, value, undefined, mapping.section);
+        }
       }
+    }
+
+    const { data: updatedMeasurements } = await supabase
+      .from('measurements')
+      .select('id, measurement_definition_id, measurement_name, unit_cm, section')
+      .eq('session_id', sessionId);
+
+    if (updatedMeasurements) {
+      setStoredMeasurements(updatedMeasurements as StoredMeasurement[]);
+    }
+
+    await supabase
+      .from('sessions')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    showToast('Measurement saved', 'success');
+    setSaving(false);
+  }
+
+  async function saveMeasurementValue(
+    definition: MeasurementDefinition,
+    value: number,
+    suffix: 'L' | 'R' | undefined,
+    section: string
+  ) {
+    const measurementName = suffix ? `${definition.name} (${suffix})` : definition.name;
+    const existing = storedMeasurements.find(m => m.measurement_name === measurementName);
+
+    if (existing) {
+      await supabase
+        .from('measurements')
+        .update({ unit_cm: value })
+        .eq('id', existing.id);
     } else {
-      const { data, error } = await supabase
+      await supabase
         .from('measurements')
         .insert({
           session_id: sessionId,
+          measurement_definition_id: definition.id,
           measurement_name: measurementName,
-          unit_cm: numValue,
-          section: selectedPoint.category === 'legs' ? 'trousers' : 'jacket',
-        })
-        .select()
-        .single();
-
-      if (error) {
-        showToast('Failed to save measurement', 'error');
-        setSaving(false);
-        return;
-      }
-
-      setStoredMeasurements(prev => ({
-        ...prev,
-        [selectedPoint.id]: {
-          id: selectedPoint.id,
-          measurement_id: data.id,
-          value: numValue,
-        },
-      }));
+          unit_cm: value,
+          section: section,
+        });
     }
-
-    setMeasurements(prev => ({ ...prev, [selectedPoint.id]: numValue }));
-    showToast('Measurement saved', 'success');
-    setSaving(false);
   }
 
   function handleNavigate(direction: 'prev' | 'next') {
     if (!selectedPoint) return;
 
-    const currentIndex = MEASUREMENT_POINTS.findIndex(p => p.id === selectedPoint.id);
+    const currentIndex = filteredPoints.findIndex(p => p.id === selectedPoint.id);
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
 
-    if (newIndex >= 0 && newIndex < MEASUREMENT_POINTS.length) {
-      handleSelectPoint(MEASUREMENT_POINTS[newIndex]);
+    if (newIndex >= 0 && newIndex < filteredPoints.length) {
+      handleSelectPoint(filteredPoints[newIndex]);
     }
   }
 
@@ -188,23 +329,19 @@ export function VisualMeasurements() {
     });
   }
 
-  const completedCount = Object.keys(measurements).length;
-  const totalCount = MEASUREMENT_POINTS.length;
-  const progressPercent = (completedCount / totalCount) * 100;
-  const completedIds = new Set(Object.keys(measurements));
-
-  function getCategoryCompletedCount(categoryId: string): number {
-    const categoryPoints = getMeasurementsByCategory(categoryId);
-    return categoryPoints.filter(p => measurements[p.id] !== undefined).length;
-  }
+  const completedIds = new Set(filteredPoints.filter(p => isPointCompleted(p.id)).map(p => p.id));
+  const completedCount = completedIds.size;
+  const totalCount = filteredPoints.length;
+  const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   const currentIndex = selectedPoint
-    ? MEASUREMENT_POINTS.findIndex(p => p.id === selectedPoint.id)
+    ? filteredPoints.findIndex(p => p.id === selectedPoint.id)
     : -1;
   const isFirstPoint = currentIndex === 0;
-  const isLastPoint = currentIndex === MEASUREMENT_POINTS.length - 1;
+  const isLastPoint = currentIndex === filteredPoints.length - 1;
 
   const showWarning = selectedPoint && inputValue && !isNaN(parseFloat(inputValue)) && isValueOutOfRange(selectedPoint.id, parseFloat(inputValue));
+  const isPaired = selectedPoint ? isPairedMeasurement(selectedPoint.id) : false;
 
   if (loading) {
     return (
@@ -214,9 +351,11 @@ export function VisualMeasurements() {
     );
   }
 
-  const clientDisplayName = client?.first_name && client?.last_name
-    ? `${client.first_name} ${client.last_name}`
-    : client?.name || 'Unknown';
+  const clientDisplayName = session?.client?.first_name && session?.client?.last_name
+    ? `${session.client.first_name} ${session.client.last_name}`
+    : session?.client?.name || 'Unknown';
+
+  const garmentLabel = session?.garment_type === 'suit' ? 'Suit' : session?.garment_type === 'jacket' ? 'Jacket' : 'Trousers';
 
   return (
     <div className="space-y-6">
@@ -229,7 +368,7 @@ export function VisualMeasurements() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Body Measurements</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {clientDisplayName}
+            {clientDisplayName} - {garmentLabel}
           </p>
         </div>
       </div>
@@ -261,6 +400,8 @@ export function VisualMeasurements() {
               selectedId={selectedPoint?.id || null}
               completedIds={completedIds}
               onSelectPoint={handleSelectPoint}
+              visiblePointIds={new Set(filteredPoints.map(p => p.id))}
+              garmentType={session?.garment_type || 'suit'}
             />
           </Card>
 
@@ -269,10 +410,9 @@ export function VisualMeasurements() {
               Categories
             </h3>
             <div className="space-y-2">
-              {CATEGORIES.map(category => {
+              {categories.map(category => {
                 const isExpanded = expandedCategories.has(category.id);
-                const completedInCategory = getCategoryCompletedCount(category.id);
-                const categoryPoints = getMeasurementsByCategory(category.id);
+                const completedInCategory = category.points.filter(p => completedIds.has(p.id)).length;
 
                 return (
                   <div key={category.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -285,7 +425,7 @@ export function VisualMeasurements() {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {completedInCategory} / {category.count}
+                          {completedInCategory} / {category.points.length}
                         </span>
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -297,9 +437,21 @@ export function VisualMeasurements() {
 
                     {isExpanded && (
                       <div className="px-4 py-2 space-y-1">
-                        {categoryPoints.map(point => {
-                          const isCompleted = measurements[point.id] !== undefined;
+                        {category.points.map(point => {
+                          const isCompleted = completedIds.has(point.id);
                           const isSelected = selectedPoint?.id === point.id;
+                          const values = getCurrentValueForPoint(point.id);
+                          const displayValue = isPairedMeasurement(point.id)
+                            ? values.left != null && values.right != null
+                              ? `L: ${values.left} / R: ${values.right}`
+                              : values.left != null
+                                ? `L: ${values.left}`
+                                : values.right != null
+                                  ? `R: ${values.right}`
+                                  : ''
+                            : values.single != null
+                              ? `${values.single}`
+                              : '';
 
                           return (
                             <button
@@ -325,9 +477,9 @@ export function VisualMeasurements() {
                               }`}>
                                 {point.name}
                               </span>
-                              {isCompleted && (
+                              {displayValue && (
                                 <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
-                                  {measurements[point.id]} {point.unit}
+                                  {displayValue} {point.unit}
                                 </span>
                               )}
                             </button>
@@ -374,27 +526,66 @@ export function VisualMeasurements() {
 
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Measurement Value
+                    Measurement Value {isPaired && '(Left / Right)'}
                   </label>
-                  <div className="flex gap-3">
-                    <div className="flex-1 relative">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={inputValue}
-                        onChange={(e) => handleInputChange(e.target.value)}
-                        placeholder={`Enter value (${selectedPoint.minValue}-${selectedPoint.maxValue})`}
-                        className="pr-12"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                        {selectedPoint.unit}
-                      </span>
+
+                  {isPaired ? (
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Left</label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder={`${selectedPoint.minValue}-${selectedPoint.maxValue}`}
+                            className="pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            {selectedPoint.unit}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Right</label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={inputValueRight}
+                            onChange={(e) => setInputValueRight(e.target.value)}
+                            placeholder={`${selectedPoint.minValue}-${selectedPoint.maxValue}`}
+                            className="pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            {selectedPoint.unit}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <Button onClick={handleSaveMeasurement} disabled={saving || !inputValue}>
-                      <Save className="w-4 h-4 mr-2" />
-                      {saving ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          placeholder={`Enter value (${selectedPoint.minValue}-${selectedPoint.maxValue})`}
+                          className="pr-12"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                          {selectedPoint.unit}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button onClick={handleSaveMeasurement} disabled={saving || (!inputValue && !inputValueRight)}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save'}
+                  </Button>
 
                   {showWarning && (
                     <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
