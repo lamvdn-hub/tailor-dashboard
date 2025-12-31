@@ -124,7 +124,7 @@ export function NewSession() {
     });
   }
 
-  async function createSessionAndNavigate() {
+  function navigateToGuidedEntry() {
     if (!formData.clientId) {
       showToast('Please select a client first', 'error');
       return;
@@ -135,65 +135,12 @@ export function NewSession() {
       return;
     }
 
-    setLoading(true);
-    setErrors({});
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        showToast('User not authenticated', 'error');
-        setLoading(false);
-        return;
+    navigate('/sessions/new/body-measurements', {
+      state: {
+        draftMode: true,
+        sessionData: formData,
       }
-
-      let displayId: string;
-      try {
-        displayId = await generateDisplayId(user.id);
-      } catch (error) {
-        showToast('Failed to generate order number', 'error');
-        setLoading(false);
-        return;
-      }
-
-      const sessionInsert: any = {
-        client_id: formData.clientId,
-        service_type: formData.serviceType,
-        garment_type: formData.garmentType,
-        fabric_id: formData.fabricId || null,
-        style_notes: formData.styleNotes || null,
-        client_requests: formData.clientRequests || null,
-        adjustment_remarks: formData.adjustmentRemarks || null,
-        display_id: displayId,
-        display_id_normalized: normalizeDisplayId(displayId),
-      };
-
-      if (formData.garmentType === 'suit') {
-        sessionInsert.suit_type = formData.suitType || null;
-        sessionInsert.lapel_type = formData.lapelType || null;
-        sessionInsert.button_type = formData.buttonType || null;
-        sessionInsert.vent_type = formData.ventType || null;
-        sessionInsert.jacket_notes = formData.jacketNotes || null;
-        sessionInsert.trousers_notes = formData.trousersNotes || null;
-      }
-
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('sessions')
-        .insert(sessionInsert)
-        .select()
-        .single();
-
-      if (sessionError || !sessionData) {
-        showToast('Failed to create session', 'error');
-        setLoading(false);
-        return;
-      }
-
-      navigate(`/sessions/${sessionData.id}/body-measurements`);
-    } catch (error) {
-      console.error('Error creating session:', error);
-      showToast('Failed to create session', 'error');
-      setLoading(false);
-    }
+    });
   }
 
   async function handleLoadLatestMeasurements() {
@@ -992,10 +939,9 @@ export function NewSession() {
           <div className="flex gap-3">
             <Button
               type="button"
-              onClick={createSessionAndNavigate}
-              disabled={loading}
+              onClick={navigateToGuidedEntry}
             >
-              {loading ? 'Creating Session...' : 'Start Visual Measurements'}
+              Start Visual Measurements
             </Button>
             <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')}>
               Cancel

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, Check, AlertTriangle, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -18,6 +18,7 @@ import {
   getDiagramPointIdsForGarment,
   getAllMappingsForPoint,
 } from '../lib/garmentMeasurementMapping';
+import { generateDisplayId, normalizeDisplayId } from '../lib/displayIdUtils';
 
 interface ClientInfo {
   id: string;
@@ -45,14 +46,42 @@ interface DiagramCategory {
   points: MeasurementPoint[];
 }
 
+interface DraftSessionData {
+  clientId: string;
+  serviceType: 'MTM' | 'Bespoke';
+  garmentType: 'jacket' | 'trousers' | 'suit';
+  fabricId: string;
+  styleNotes: string;
+  clientRequests: string;
+  adjustmentRemarks: string;
+  suitType?: string;
+  lapelType?: string;
+  buttonType?: string;
+  ventType?: string;
+  jacketNotes?: string;
+  trousersNotes?: string;
+}
+
+interface DraftMeasurement {
+  definitionId: string;
+  measurementName: string;
+  value: number;
+  section: string;
+}
+
 export function VisualMeasurements() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { sessionId } = useParams<{ sessionId: string }>();
   const { toasts, showToast, removeToast } = useToast();
+
+  const isDraftMode = location.state?.draftMode === true;
+  const draftSessionData = location.state?.sessionData as DraftSessionData | undefined;
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [definitions, setDefinitions] = useState<MeasurementDefinition[]>([]);
   const [storedMeasurements, setStoredMeasurements] = useState<StoredMeasurement[]>([]);
+  const [draftMeasurements, setDraftMeasurements] = useState<DraftMeasurement[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<MeasurementPoint | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['torso']));
   const [inputValue, setInputValue] = useState('');
@@ -64,10 +93,12 @@ export function VisualMeasurements() {
   const [categories, setCategories] = useState<DiagramCategory[]>([]);
 
   useEffect(() => {
-    if (sessionId) {
+    if (isDraftMode && draftSessionData) {
+      loadDraftSession();
+    } else if (sessionId) {
       loadSessionData();
     }
-  }, [sessionId]);
+  }, [sessionId, isDraftMode]);
 
   useEffect(() => {
     if (session) {
@@ -103,6 +134,41 @@ export function VisualMeasurements() {
       setCategories(cats);
     }
   }, [session]);
+
+  async function loadDraftSession() {
+    if (!draftSessionData) return;
+
+    setLoading(true);
+
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .select('id, name, first_name, last_name')
+      .eq('id', draftSessionData.clientId)
+      .maybeSingle();
+
+    if (clientError || !clientData) {
+      showToast('Failed to load client', 'error');
+      setLoading(false);
+      return;
+    }
+
+    setSession({
+      garment_type: draftSessionData.garmentType as GarmentType,
+      client: clientData as ClientInfo,
+    });
+
+    const { data: defsData } = await supabase
+      .from('measurement_definitions')
+      .select('*')
+      .order('section')
+      .order('order_index');
+
+    if (defsData) {
+      setDefinitions(defsData);
+    }
+
+    setLoading(false);
+  }
 
   async function loadSessionData() {
     if (!sessionId) return;
@@ -157,8 +223,23 @@ export function VisualMeasurements() {
     const definition = definitions.find(d => d.id === definitionId);
     if (!definition) return undefined;
 
+    const measurementName = suffix ? `${definition.name} (${suffix})` : definition.name;
+
+    if (isDraftMode) {
+      const draftValue = draftMeasurements.find(m => m.measurementName === measurementName);
+      if (draftValue) {
+        return {
+          id: draftValue.definitionId,
+          measurement_definition_id: draftValue.definitionId,
+          measurement_name: draftValue.measurementName,
+          unit_cm: draftValue.value,
+          section: draftValue.section,
+        };
+      }
+      return undefined;
+    }
+
     if (suffix) {
-      const measurementName = `${definition.name} (${suffix})`;
       return storedMeasurements.find(m => m.measurement_name === measurementName);
     }
 
@@ -229,7 +310,7 @@ export function VisualMeasurements() {
   }
 
   async function handleSaveMeasurement() {
-    if (!selectedPoint || !sessionId || !session) return;
+    if (!selectedPoint || !session) return;
 
     const mappings = getAllMappingsForPoint(selectedPoint.id, session.garment_type);
     if (mappings.length === 0) {
@@ -238,6 +319,36 @@ export function VisualMeasurements() {
     }
 
     setSaving(true);
+
+    if (isDraftMode) {
+      for (const mapping of mappings) {
+        const definition = getDefinitionForMapping(mapping.definitionName, mapping.section);
+        if (!definition) continue;
+
+        if (mapping.isPaired) {
+          const leftValue = inputValue ? parseFloat(inputValue) : null;
+          const rightValue = inputValueRight ? parseFloat(inputValueRight) : null;
+
+          if (leftValue !== null) {
+            saveDraftMeasurementValue(definition, leftValue, 'L', mapping.section);
+          }
+          if (rightValue !== null) {
+            saveDraftMeasurementValue(definition, rightValue, 'R', mapping.section);
+          }
+        } else {
+          const value = inputValue ? parseFloat(inputValue) : null;
+          if (value !== null) {
+            saveDraftMeasurementValue(definition, value, undefined, mapping.section);
+          }
+        }
+      }
+
+      showToast('Measurement saved', 'success');
+      setSaving(false);
+      return;
+    }
+
+    if (!sessionId) return;
 
     for (const mapping of mappings) {
       const definition = getDefinitionForMapping(mapping.definitionName, mapping.section);
@@ -279,6 +390,32 @@ export function VisualMeasurements() {
     setSaving(false);
   }
 
+  function saveDraftMeasurementValue(
+    definition: MeasurementDefinition,
+    value: number,
+    suffix: 'L' | 'R' | undefined,
+    section: string
+  ) {
+    const measurementName = suffix ? `${definition.name} (${suffix})` : definition.name;
+
+    setDraftMeasurements(prev => {
+      const existing = prev.find(m => m.measurementName === measurementName);
+      if (existing) {
+        return prev.map(m =>
+          m.measurementName === measurementName
+            ? { ...m, value }
+            : m
+        );
+      }
+      return [...prev, {
+        definitionId: definition.id,
+        measurementName,
+        value,
+        section,
+      }];
+    });
+  }
+
   async function saveMeasurementValue(
     definition: MeasurementDefinition,
     value: number,
@@ -303,6 +440,92 @@ export function VisualMeasurements() {
           unit_cm: value,
           section: section,
         });
+    }
+  }
+
+  async function handleSaveSession() {
+    if (!isDraftMode || !draftSessionData) return;
+
+    setSaving(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        showToast('User not authenticated', 'error');
+        setSaving(false);
+        return;
+      }
+
+      let displayId: string;
+      try {
+        displayId = await generateDisplayId(user.id);
+      } catch (error) {
+        showToast('Failed to generate order number', 'error');
+        setSaving(false);
+        return;
+      }
+
+      const sessionInsert: any = {
+        client_id: draftSessionData.clientId,
+        service_type: draftSessionData.serviceType,
+        garment_type: draftSessionData.garmentType,
+        fabric_id: draftSessionData.fabricId || null,
+        style_notes: draftSessionData.styleNotes || null,
+        client_requests: draftSessionData.clientRequests || null,
+        adjustment_remarks: draftSessionData.adjustmentRemarks || null,
+        display_id: displayId,
+        display_id_normalized: normalizeDisplayId(displayId),
+      };
+
+      if (draftSessionData.garmentType === 'suit') {
+        sessionInsert.suit_type = draftSessionData.suitType || null;
+        sessionInsert.lapel_type = draftSessionData.lapelType || null;
+        sessionInsert.button_type = draftSessionData.buttonType || null;
+        sessionInsert.vent_type = draftSessionData.ventType || null;
+        sessionInsert.jacket_notes = draftSessionData.jacketNotes || null;
+        sessionInsert.trousers_notes = draftSessionData.trousersNotes || null;
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('sessions')
+        .insert(sessionInsert)
+        .select()
+        .single();
+
+      if (sessionError || !sessionData) {
+        showToast('Failed to create session', 'error');
+        setSaving(false);
+        return;
+      }
+
+      if (draftMeasurements.length > 0) {
+        const measurementRows = draftMeasurements.map(m => ({
+          session_id: sessionData.id,
+          measurement_definition_id: m.definitionId,
+          measurement_name: m.measurementName,
+          unit_cm: m.value,
+          section: m.section,
+        }));
+
+        const { error: measurementError } = await supabase
+          .from('measurements')
+          .insert(measurementRows);
+
+        if (measurementError) {
+          console.error('Failed to save measurements:', measurementError);
+          showToast('Failed to save measurements', 'error');
+          setSaving(false);
+          return;
+        }
+      }
+
+      showToast('Session saved successfully', 'success');
+      setSaving(false);
+      navigate(`/sessions/${sessionData.id}`);
+    } catch (error) {
+      console.error('Error saving session:', error);
+      showToast('Failed to save session', 'error');
+      setSaving(false);
     }
   }
 
@@ -361,16 +584,25 @@ export function VisualMeasurements() {
     <div className="space-y-6">
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      <div className="flex items-center gap-4">
-        <Button variant="secondary" onClick={() => navigate(`/sessions/${sessionId}`)}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Body Measurements</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {clientDisplayName} - {garmentLabel}
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="secondary" onClick={() => navigate(isDraftMode ? '/sessions/new' : `/sessions/${sessionId}`)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Body Measurements</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {clientDisplayName} - {garmentLabel}
+              {isDraftMode && <span className="ml-2 text-amber-600 dark:text-amber-400">(Draft)</span>}
+            </p>
+          </div>
         </div>
+        {isDraftMode && (
+          <Button onClick={handleSaveSession} disabled={saving}>
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving Session...' : 'Save Session'}
+          </Button>
+        )}
       </div>
 
       <Card className="p-4">

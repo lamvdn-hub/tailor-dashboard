@@ -104,6 +104,7 @@ function ProtectedLayout() {
           <Route path="/clients/:clientId/edit" element={<NewClient />} />
           <Route path="/sessions/new" element={<NewSession />} />
           <Route path="/clients/:clientId/sessions/new" element={<NewSession />} />
+          <Route path="/sessions/new/body-measurements" element={<VisualMeasurements />} />
           <Route path="/sessions/:sessionId" element={<SessionDetail />} />
           <Route path="/sessions/:sessionId/body-measurements" element={<VisualMeasurements />} />
           <Route path="/fabrics" element={<Fabrics />} />
