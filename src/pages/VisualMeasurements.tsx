@@ -77,11 +77,12 @@ export function VisualMeasurements() {
 
   const isDraftMode = location.state?.draftMode === true;
   const draftSessionData = location.state?.sessionData as DraftSessionData | undefined;
+  const restoredMeasurements = location.state?.restoredMeasurements as DraftMeasurement[] | undefined;
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [definitions, setDefinitions] = useState<MeasurementDefinition[]>([]);
   const [storedMeasurements, setStoredMeasurements] = useState<StoredMeasurement[]>([]);
-  const [draftMeasurements, setDraftMeasurements] = useState<DraftMeasurement[]>([]);
+  const [draftMeasurements, setDraftMeasurements] = useState<DraftMeasurement[]>(restoredMeasurements || []);
   const [selectedPoint, setSelectedPoint] = useState<MeasurementPoint | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['torso']));
   const [inputValue, setInputValue] = useState('');
@@ -586,7 +587,18 @@ export function VisualMeasurements() {
 
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="secondary" onClick={() => navigate(isDraftMode ? '/sessions/new' : `/sessions/${sessionId}`)}>
+          <Button variant="secondary" onClick={() => {
+            if (isDraftMode) {
+              navigate('/sessions/new', {
+                state: {
+                  restoredData: draftSessionData,
+                  restoredMeasurements: draftMeasurements,
+                }
+              });
+            } else {
+              navigate(`/sessions/${sessionId}`);
+            }
+          }}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>

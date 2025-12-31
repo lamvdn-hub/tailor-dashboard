@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clipboard, Check, User } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -25,6 +25,7 @@ interface MeasurementValue {
 
 export function NewSession() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { clientId: initialClientId } = useParams<{ clientId: string }>();
 
   const isValidClientId = (id: string | undefined): boolean => {
@@ -35,24 +36,27 @@ export function NewSession() {
 
   const validInitialClientId = isValidClientId(initialClientId) ? initialClientId : undefined;
 
+  const restoredData = location.state?.restoredData;
+  const restoredMeasurements = location.state?.restoredMeasurements;
+
   const [clients, setClients] = useState<Client[]>([]);
   const [fabrics, setFabrics] = useState<Fabric[]>([]);
   const [jacketDefinitions, setJacketDefinitions] = useState<MeasurementDefinition[]>([]);
   const [trousersDefinitions, setTrousersDefinitions] = useState<MeasurementDefinition[]>([]);
   const [formData, setFormData] = useState({
-    clientId: validInitialClientId || '',
-    serviceType: 'MTM' as 'MTM' | 'Bespoke',
-    garmentType: 'jacket' as 'jacket' | 'trousers' | 'suit',
-    fabricId: '',
-    styleNotes: '',
-    clientRequests: '',
-    adjustmentRemarks: '',
-    suitType: '',
-    lapelType: '',
-    buttonType: '',
-    ventType: '',
-    jacketNotes: '',
-    trousersNotes: '',
+    clientId: restoredData?.clientId || validInitialClientId || '',
+    serviceType: (restoredData?.serviceType || 'MTM') as 'MTM' | 'Bespoke',
+    garmentType: (restoredData?.garmentType || 'jacket') as 'jacket' | 'trousers' | 'suit',
+    fabricId: restoredData?.fabricId || '',
+    styleNotes: restoredData?.styleNotes || '',
+    clientRequests: restoredData?.clientRequests || '',
+    adjustmentRemarks: restoredData?.adjustmentRemarks || '',
+    suitType: restoredData?.suitType || '',
+    lapelType: restoredData?.lapelType || '',
+    buttonType: restoredData?.buttonType || '',
+    ventType: restoredData?.ventType || '',
+    jacketNotes: restoredData?.jacketNotes || '',
+    trousersNotes: restoredData?.trousersNotes || '',
   });
   const [jacketValues, setJacketValues] = useState<MeasurementValue[]>([]);
   const [trousersValues, setTrousersValues] = useState<MeasurementValue[]>([]);
@@ -62,7 +66,7 @@ export function NewSession() {
   const { toasts, showToast, removeToast } = useToast();
   const [photos, setPhotos] = useState<ProcessedPhoto[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [measurementInterface, setMeasurementInterface] = useState<'form' | 'guided' | null>(null);
+  const [measurementInterface, setMeasurementInterface] = useState<'form' | 'guided' | null>(restoredData ? 'guided' : null);
 
   useEffect(() => {
     loadData();
@@ -139,6 +143,7 @@ export function NewSession() {
       state: {
         draftMode: true,
         sessionData: formData,
+        restoredMeasurements: restoredMeasurements || [],
       }
     });
   }
