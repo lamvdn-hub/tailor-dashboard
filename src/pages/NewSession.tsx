@@ -124,7 +124,7 @@ export function NewSession() {
     });
   }
 
-  async function handleSelectGuidedEntry() {
+  async function createSessionAndNavigate() {
     if (!formData.clientId) {
       showToast('Please select a client first', 'error');
       return;
@@ -753,15 +753,14 @@ export function NewSession() {
               <button
                 type="button"
                 onClick={() => setMeasurementInterface('form')}
-                disabled={loading}
-                className={`p-6 rounded-lg border-2 transition-all text-left ${
+                className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer ${
                   measurementInterface === 'form'
                     ? 'border-[#506B4D] bg-[#506B4D]/5 dark:bg-[#506B4D]/10'
                     : 'border-gray-200 dark:border-gray-700 hover:border-[#506B4D]/50 hover:bg-gray-50 dark:hover:bg-gray-800'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
                     measurementInterface === 'form'
                       ? 'bg-[#506B4D] text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
@@ -785,17 +784,29 @@ export function NewSession() {
 
               <button
                 type="button"
-                onClick={handleSelectGuidedEntry}
-                disabled={loading || !formData.clientId}
+                onClick={() => setMeasurementInterface('guided')}
+                disabled={!formData.clientId}
                 className={`p-6 rounded-lg border-2 transition-all text-left ${
-                  loading || !formData.clientId
-                    ? 'opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-700'
+                  !formData.clientId
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'cursor-pointer'
+                } ${
+                  measurementInterface === 'guided'
+                    ? 'border-[#506B4D] bg-[#506B4D]/5 dark:bg-[#506B4D]/10'
                     : 'border-gray-200 dark:border-gray-700 hover:border-[#506B4D]/50 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold">2</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                    measurementInterface === 'guided'
+                      ? 'bg-[#506B4D] text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {measurementInterface === 'guided' ? (
+                      <Check className="w-5 h-5" />
+                    ) : (
+                      <span className="text-sm font-bold">2</span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
@@ -975,6 +986,21 @@ export function NewSession() {
               </Button>
             </div>
           </>
+        )}
+
+        {measurementInterface === 'guided' && (
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              onClick={createSessionAndNavigate}
+              disabled={loading}
+            >
+              {loading ? 'Creating Session...' : 'Start Visual Measurements'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')}>
+              Cancel
+            </Button>
+          </div>
         )}
       </form>
     </div>
