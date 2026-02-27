@@ -155,8 +155,6 @@
   @supports (-webkit-touch-callout: none) {
     .fixed {
       position: fixed;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
     }
   }
 
@@ -172,8 +170,6 @@
     and (device-height: 852px)
     and (-webkit-device-pixel-ratio: 3) {
     .fixed {
-      transform: translate3d(0, 0, 0);
-      -webkit-transform: translate3d(0, 0, 0);
     }
   }
 
