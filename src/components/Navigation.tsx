@@ -48,7 +48,7 @@ export function Navigation({ currentPage }: NavigationProps) {
   };
 
   return (
-    <nav className="bg-[#506B4D] dark:bg-gray-800 text-white shadow-lg sticky top-0 z-50 transition-colors">
+    <nav className="bg-[#506B4D] dark:bg-gray-800 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between gap-3 md:gap-4 lg:gap-6 h-16 md:h-28 lg:h-32">
           <Link

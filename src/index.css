@@ -4,6 +4,7 @@
 
 @layer base {
   html {
+    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
@@ -74,6 +75,11 @@
 }
 
 @layer utilities {
+  .sticky {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
   @media (max-width: 768px) {
     .text-3xl {
       font-size: 1.75rem;
