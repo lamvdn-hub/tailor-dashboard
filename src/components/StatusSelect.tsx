@@ -49,37 +49,24 @@ export function StatusSelect({ value, onChange, options }: StatusSelectProps) {
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const updatePosition = () => {
-        if (buttonRef.current) {
-          const rect = buttonRef.current.getBoundingClientRect();
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = options.length * 40 + 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
 
-          // Calculate dropdown height (estimate based on number of options)
-          const dropdownHeight = options.length * 40 + 8; // ~40px per option + padding
+      setOpenUpward(shouldOpenUpward);
+      setDropdownPosition({
+        top: shouldOpenUpward ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
 
-          // Calculate available space below and above the button
-          const spaceBelow = window.innerHeight - rect.bottom;
-          const spaceAbove = rect.top;
-
-          // Determine if dropdown should open upward
-          const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-
-          setOpenUpward(shouldOpenUpward);
-          setDropdownPosition({
-            top: shouldOpenUpward ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
-            left: rect.left,
-            width: rect.width,
-          });
-        }
-      };
-
-      updatePosition();
-
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
+      const closeOnScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', closeOnScroll, true);
 
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', closeOnScroll, true);
       };
     }
   }, [isOpen, options.length]);
