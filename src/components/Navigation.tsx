@@ -5,6 +5,7 @@ import { BurgerMenu } from './BurgerMenu';
 import { NavigationMenu } from './NavigationMenu';
 import { GlobalSearchResults } from './GlobalSearchResults';
 import { useAuth } from '../contexts/AuthContext';
+import logoUrl from '../assets/wbb-tailor-logo.webp';
 
 interface NavigationProps {
   currentPage: string;
@@ -57,7 +58,7 @@ export function Navigation({ currentPage }: NavigationProps) {
             aria-label="Go to Dashboard"
           >
             <img
-              src="/Screenshot+2023-09-13+at+13.49.21 copy.webp"
+              src={logoUrl}
               alt="WBB Tailor Logo"
               className="h-12 md:h-20 lg:h-24 w-auto object-contain"
             />
