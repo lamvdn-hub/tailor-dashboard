@@ -1,24 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'tailor-notebook-auth',
-    debug: true,
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'tailor-notebook-web',
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "❌ Supabase environment variables are missing.\n" +
+    "Please create a .env file in the project root with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
+  );
+}
+
+// Use fallback values to prevent top-level runtime crash if env variables are missing
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce',
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'tailor-notebook-auth',
+      debug: true,
     },
-  },
-});
+    global: {
+      headers: {
+        'X-Client-Info': 'tailor-notebook-web',
+      },
+    },
+  }
+);
 
 export type Client = {
   id: string;
