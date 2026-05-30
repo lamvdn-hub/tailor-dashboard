@@ -15,11 +15,14 @@ export function UpdatePassword() {
 
   useEffect(() => {
     if (!isPasswordRecovery) {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = params.get('access_token');
-      const type = params.get('type');
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
       
-      if (!accessToken || type !== 'recovery') {
+      const queryParams = new URLSearchParams(window.location.search);
+      const hasCode = queryParams.has('code');
+
+      if ((!accessToken || type !== 'recovery') && !hasCode) {
         navigate('/login');
       }
     }
