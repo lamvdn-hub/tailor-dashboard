@@ -23,7 +23,7 @@ interface TableHeaderProps {
 
 export function TableHeader({ children }: TableHeaderProps) {
   return (
-    <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 transition-colors">
+    <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0">
       {children}
     </thead>
   );
@@ -46,7 +46,7 @@ interface TableRowProps {
 export function TableRow({ children, onClick, className = '' }: TableRowProps) {
   return (
     <tr
-      className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}

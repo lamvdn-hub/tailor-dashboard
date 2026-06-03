@@ -209,10 +209,10 @@ export default function Queries() {
               {filteredQueries.map((query) => (
                 <div
                   key={query.id}
-                  className={`border rounded-lg p-4 sm:p-6 transition-all duration-300 ${
+                  className={`border rounded-lg p-4 sm:p-6 transition-shadow duration-200 ${
                     query.Status
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#506B4D] hover:shadow-lg dark:hover:shadow-[#506B4D]/20 dark:hover:bg-gray-750 hover:scale-[1.001] dark:hover:border-[#6b8a66]'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-[#506B4D] hover:shadow-lg dark:hover:shadow-[#506B4D]/20 dark:hover:bg-gray-750 dark:hover:border-[#6b8a66]'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

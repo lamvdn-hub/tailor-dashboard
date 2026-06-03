@@ -48,25 +48,18 @@ export function TaskStatusSelect({ value, onChange, options }: TaskStatusSelectP
 
   useEffect(() => {
     if (isOpen && buttonRef.current) {
-      const updatePosition = () => {
-        if (buttonRef.current) {
-          const rect = buttonRef.current.getBoundingClientRect();
-          setDropdownPosition({
-            top: rect.bottom + 4,
-            left: rect.left,
-            width: rect.width,
-          });
-        }
-      };
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
 
-      updatePosition();
-
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
+      const closeOnScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', closeOnScroll, true);
 
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', closeOnScroll, true);
       };
     }
   }, [isOpen]);

@@ -6,10 +6,12 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
   }
 
   body {
     overflow-x: hidden;
+    overscroll-behavior: none;
   }
 }
 
@@ -27,6 +29,21 @@
 
   .animate-slide-up {
     animation: slide-up 0.3s ease-out forwards;
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out forwards;
   }
 
   /* Navigation responsive adjustments for medium screens (768px - 1024px) */
@@ -59,6 +76,11 @@
 }
 
 @layer utilities {
+  .sticky {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
   @media (max-width: 768px) {
     .text-3xl {
       font-size: 1.75rem;
@@ -90,10 +112,6 @@
     }
   }
 
-  .overflow-x-auto {
-    -webkit-overflow-scrolling: touch;
-  }
-
   table {
     min-width: 100%;
   }
@@ -117,10 +135,6 @@
       appearance: none;
     }
 
-    .fixed {
-      -webkit-overflow-scrolling: touch;
-    }
-
     body.modal-open {
       overflow: hidden;
       position: fixed;
@@ -140,8 +154,6 @@
   @supports (-webkit-touch-callout: none) {
     .fixed {
       position: fixed;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
     }
   }
 
@@ -149,16 +161,6 @@
     body {
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-    }
-  }
-
-  @media only screen
-    and (device-width: 393px)
-    and (device-height: 852px)
-    and (-webkit-device-pixel-ratio: 3) {
-    .fixed {
-      transform: translate3d(0, 0, 0);
-      -webkit-transform: translate3d(0, 0, 0);
     }
   }
 

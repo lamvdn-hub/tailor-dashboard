@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { exportUserData } from '../lib/gdprUtils';
-import { Download, Trash2, Lock, User, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Download, Trash2, Lock, User, AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 
 interface UserProfile {
   first_name: string;
   last_name: string;
+  shop_code: string;
   created_at: string;
 }
 
@@ -19,6 +20,7 @@ export function ProfileSecurity() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [shopCode, setShopCode] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -36,7 +38,7 @@ export function ProfileSecurity() {
 
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('first_name, last_name, created_at')
+      .select('first_name, last_name, shop_code, created_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -44,11 +46,24 @@ export function ProfileSecurity() {
       setUserProfile(data);
       setFirstName(data.first_name || '');
       setLastName(data.last_name || '');
+      setShopCode(data.shop_code || 'SHP');
     }
   };
 
   const handleSaveProfile = async () => {
     if (!user) return;
+
+    const trimmedShopCode = shopCode.trim().toUpperCase();
+
+    if (trimmedShopCode.length < 2 || trimmedShopCode.length > 4) {
+      setMessage({ type: 'error', text: 'Shop code must be 2-4 characters long.' });
+      return;
+    }
+
+    if (!/^[A-Z]+$/.test(trimmedShopCode)) {
+      setMessage({ type: 'error', text: 'Shop code must contain only letters (A-Z).' });
+      return;
+    }
 
     setIsSaving(true);
     setMessage(null);
@@ -58,6 +73,7 @@ export function ProfileSecurity() {
       .update({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        shop_code: trimmedShopCode,
       })
       .eq('user_id', user.id);
 
@@ -221,6 +237,45 @@ export function ProfileSecurity() {
             </div>
           </div>
 
+          <div className="pt-4 border-t border-gray-200 dark:border-[#2A3136]">
+            <div className="flex items-center gap-2 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-[#B7BAAE]">
+                Shop Code
+              </label>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                title="Used in order ID format: SHOP-YYMMDD-SEQ"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Used in order numbers (e.g., {shopCode || 'XXX'}-250115-001)
+            </p>
+            {isEditing ? (
+              <div className="space-y-2">
+                <Input
+                  value={shopCode}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase();
+                    if (/^[A-Z]*$/.test(value) && value.length <= 4) {
+                      setShopCode(value);
+                    }
+                  }}
+                  maxLength={4}
+                  className="w-32 uppercase font-mono"
+                  placeholder="WBB"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  2-4 uppercase letters only
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray-900 dark:text-[#E8EAE7] font-mono font-bold">{shopCode || 'Not set'}</p>
+            )}
+          </div>
+
           <div className="flex gap-3 pt-2">
             {isEditing ? (
               <>
@@ -233,6 +288,7 @@ export function ProfileSecurity() {
                     setIsEditing(false);
                     setFirstName(userProfile?.first_name || '');
                     setLastName(userProfile?.last_name || '');
+                    setShopCode(userProfile?.shop_code || 'SHP');
                   }}
                   disabled={isSaving}
                 >

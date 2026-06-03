@@ -1,18 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy, Camera, ZoomIn, Upload, Trash2, Link2, Check, User } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MobileSelect } from '../components/MobileSelect';
 import { MeasurementTable } from '../components/MeasurementTable';
 import { Textarea } from '../components/Textarea';
 import { SuitConfiguration } from '../components/SuitConfiguration';
+import { ToastContainer } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { supabase, Session, Client, MeasurementDefinition } from '../lib/supabase';
 import { formatDate } from '../lib/dateUtils';
+import { processPhoto, validatePhotoFile } from '../lib/imageUtils';
+import { useAuth } from '../contexts/AuthContext';
+import Lightbox from '../components/Lightbox';
 
 interface SessionWithClient extends Session {
   client: Client;
   fabric?: { name: string } | null;
+  status_token?: string;
 }
 
 interface MeasurementValue {
@@ -25,9 +31,24 @@ interface MeasurementValue {
   unitCm?: number | null;
 }
 
+interface SessionPhoto {
+  id: string;
+  session_id: string;
+  file_path: string;
+  thumbnail_path: string;
+  file_size: number;
+  uploaded_by: string | null;
+  uploaded_at: string;
+  file_url: string;
+  thumbnail_url: string;
+}
+
 export function SessionDetail() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId: string }>();
+  const { user } = useAuth();
+  const { toasts, showToast, removeToast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [session, setSession] = useState<SessionWithClient | null>(null);
   const [jacketDefinitions, setJacketDefinitions] = useState<MeasurementDefinition[]>([]);
   const [trousersDefinitions, setTrousersDefinitions] = useState<MeasurementDefinition[]>([]);
@@ -44,6 +65,10 @@ export function SessionDetail() {
   const [savingTrousers, setSavingTrousers] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingSuitConfig, setSavingSuitConfig] = useState(false);
+  const [showCopied, setShowCopied] = useState(false);
+  const [showStatusLinkCopied, setShowStatusLinkCopied] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [notesData, setNotesData] = useState({
     style_notes: '',
     client_requests: '',
@@ -57,12 +82,29 @@ export function SessionDetail() {
     button_type: '',
     vent_type: '',
   });
+  const [photos, setPhotos] = useState<SessionPhoto[]>([]);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     if (sessionId) {
       loadSessionData();
     }
   }, [sessionId]);
+
+  function handleCopyOrderId(displayId: string) {
+    navigator.clipboard.writeText(displayId);
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 2000);
+  }
+
+  function handleCopyStatusLink() {
+    if (!session?.status_token) return;
+    const statusUrl = `${window.location.origin}/status/${session.status_token}`;
+    navigator.clipboard.writeText(statusUrl);
+    setShowStatusLinkCopied(true);
+    setTimeout(() => setShowStatusLinkCopied(false), 2000);
+  }
 
   async function loadSessionData() {
     if (!sessionId) return;
@@ -74,7 +116,10 @@ export function SessionDetail() {
 
   async function refreshSessionData() {
     if (!sessionId) return;
-    const [sessionRes, measurementsRes, defsRes] = await Promise.all([
+
+    console.log('Loading session data for:', sessionId);
+
+    const [sessionRes, measurementsRes, defsRes, photosRes] = await Promise.all([
       supabase
         .from('sessions')
         .select('*, client:clients(*), fabric:fabrics(name)')
@@ -91,7 +136,57 @@ export function SessionDetail() {
         .select('*')
         .order('section')
         .order('order_index'),
+      supabase
+        .from('session_photos')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('uploaded_at', { ascending: true }),
     ]);
+
+    console.log('Photos query result:', photosRes);
+
+    if (photosRes.error) {
+      console.error('Error loading photos:', photosRes.error);
+    }
+
+    if (photosRes.data) {
+      console.log(`Found ${photosRes.data.length} photo(s) for this session`);
+
+      const photosWithUrls = await Promise.all(
+        photosRes.data.map(async (photo) => {
+          const { data: fileUrl, error: fileError } = await supabase.storage
+            .from('session_photos')
+            .createSignedUrl(photo.file_path, 3600);
+
+          const { data: thumbUrl, error: thumbError } = await supabase.storage
+            .from('session_photos')
+            .createSignedUrl(photo.thumbnail_path, 3600);
+
+          if (fileError || thumbError) {
+            console.error('Error creating signed URLs:', { fileError, thumbError });
+          }
+
+          console.log('Photo URLs:', {
+            file_path: photo.file_path,
+            file_url: fileUrl?.signedUrl,
+            thumbnail_path: photo.thumbnail_path,
+            thumbnail_url: thumbUrl?.signedUrl,
+          });
+
+          return {
+            ...photo,
+            file_url: fileUrl?.signedUrl || '',
+            thumbnail_url: thumbUrl?.signedUrl || '',
+          };
+        })
+      );
+
+      setPhotos(photosWithUrls);
+      console.log('Photos state updated with', photosWithUrls.length, 'photos');
+    } else {
+      console.log('No photos found for this session');
+      setPhotos([]);
+    }
 
     if (sessionRes.data) {
       setSession(sessionRes.data as SessionWithClient);
@@ -407,13 +502,193 @@ export function SessionDetail() {
     setIsEditingSuitConfig(false);
   }
 
-  async function updateStatus(newStatus: 'active' | 'completed' | 'ready') {
+  function getStatusOptions(serviceType: string) {
+    const normalizedServiceType = serviceType.toLowerCase().trim();
+
+    if (normalizedServiceType === 'mtm' || normalizedServiceType === 'made-to-measure') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (normalizedServiceType === 'bespoke') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting_1', label: 'Fitting #1' },
+        { value: 'fitting_2', label: 'Fitting #2' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    } else if (normalizedServiceType === 'alteration' || normalizedServiceType === 'alterations') {
+      return [
+        { value: 'active', label: 'Active' },
+        { value: 'fitting', label: 'Fitting' },
+        { value: 'pickup', label: 'Pickup' },
+        { value: 'completed', label: 'Completed' },
+      ];
+    }
+
+    return [
+      { value: 'active', label: 'Active' },
+      { value: 'fitting', label: 'Fitting' },
+      { value: 'pickup', label: 'Pickup' },
+      { value: 'completed', label: 'Completed' },
+    ];
+  }
+
+  async function updateStatus(newStatus: string) {
     await supabase
       .from('sessions')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', sessionId);
 
     setSession(prev => prev ? { ...prev, status: newStatus } : null);
+  }
+
+  async function handlePhotoUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !sessionId || !user) return;
+
+    setUploadingPhoto(true);
+
+    let successCount = 0;
+    let failureCount = 0;
+    const failedFiles: string[] = [];
+
+    try {
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!userProfile) {
+        showToast('User profile not found. Please try logging out and back in.', 'error');
+        setUploadingPhoto(false);
+        return;
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        const validation = validatePhotoFile(file);
+        if (!validation.valid) {
+          showToast(validation.error || 'Invalid file', 'error');
+          failureCount++;
+          failedFiles.push(file.name);
+          continue;
+        }
+
+        const processed = await processPhoto(file);
+
+        const timestamp = Date.now();
+        const randomId = crypto.randomUUID();
+        const filePath = `${sessionId}/${timestamp}_${randomId}.jpg`;
+        const thumbPath = `${sessionId}/thumb_${timestamp}_${randomId}.jpg`;
+
+        const { error: fileError } = await supabase.storage
+          .from('session_photos')
+          .upload(filePath, processed.file, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (fileError) {
+          showToast(`Failed to upload ${file.name}: ${fileError.message}`, 'error');
+          failureCount++;
+          failedFiles.push(file.name);
+          continue;
+        }
+
+        const { error: thumbError } = await supabase.storage
+          .from('session_photos')
+          .upload(thumbPath, processed.thumbnail, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (thumbError) {
+          showToast(`Failed to upload thumbnail: ${thumbError.message}`, 'error');
+          await supabase.storage.from('session_photos').remove([filePath]);
+          failureCount++;
+          failedFiles.push(file.name);
+          continue;
+        }
+
+        const { error: metadataError } = await supabase
+          .from('session_photos')
+          .insert({
+            session_id: sessionId,
+            file_path: filePath,
+            thumbnail_path: thumbPath,
+            file_size: processed.file.size,
+            uploaded_by: userProfile.id,
+          });
+
+        if (metadataError) {
+          showToast(`Failed to save photo metadata: ${metadataError.message}`, 'error');
+          await supabase.storage.from('session_photos').remove([filePath, thumbPath]);
+          failureCount++;
+          failedFiles.push(file.name);
+          continue;
+        }
+
+        successCount++;
+      }
+
+      await refreshSessionData();
+
+      if (successCount > 0 && failureCount === 0) {
+        showToast(`${successCount} photo${successCount > 1 ? 's' : ''} uploaded successfully`, 'success');
+      } else if (successCount > 0 && failureCount > 0) {
+        showToast(`${successCount} photo${successCount > 1 ? 's' : ''} uploaded, ${failureCount} failed`, 'error');
+      } else if (failureCount > 0) {
+        showToast(`Failed to upload ${failureCount} photo${failureCount > 1 ? 's' : ''}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      showToast('Failed to upload photos', 'error');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
+  async function handleDeletePhoto(photoId: string, filePath: string, thumbnailPath: string) {
+    if (!confirm('Are you sure you want to delete this photo? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingPhotoId(photoId);
+
+    try {
+      const { error: dbError } = await supabase
+        .from('session_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (dbError) {
+        showToast('Failed to delete photo: ' + dbError.message, 'error');
+        setDeletingPhotoId(null);
+        return;
+      }
+
+      await supabase.storage
+        .from('session_photos')
+        .remove([filePath, thumbnailPath]);
+
+      await refreshSessionData();
+      showToast('Photo deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      showToast('Failed to delete photo', 'error');
+    } finally {
+      setDeletingPhotoId(null);
+    }
   }
 
   if (loading) {
@@ -442,11 +717,33 @@ export function SessionDetail() {
 
   return (
     <div className="space-y-6">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="flex items-center gap-4">
         <Button variant="secondary" onClick={() => navigate(`/clients/${session.client_id}`)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Session Details</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Session Details</h1>
+          {session.display_id && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xl font-mono font-bold text-gray-700 dark:text-gray-300">
+                Order #{session.display_id}
+              </span>
+              <button
+                onClick={() => handleCopyOrderId(session.display_id!)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-all"
+                title="Copy order number"
+              >
+                {showCopied ? (
+                  <span className="text-sm text-green-600 dark:text-green-400 font-semibold">Copied!</span>
+                ) : (
+                  <Copy className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -475,15 +772,170 @@ export function SessionDetail() {
             <MobileSelect
               label="Status"
               value={session.status}
-              onChange={(value) => updateStatus(value as 'active' | 'completed' | 'ready')}
-              options={[
-                { value: 'active', label: 'Active' },
-                { value: 'ready', label: 'Ready for Pickup' },
-                { value: 'completed', label: 'Completed' },
-              ]}
+              onChange={(value) => updateStatus(value)}
+              options={getStatusOptions(session.service_type || 'MTM')}
             />
           </div>
         </div>
+      </Card>
+
+      {session.status_token && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#506B4D]/10 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-[#506B4D]" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Customer Status Tracking</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Share this link with your customer to track order progress
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={handleCopyStatusLink}
+              className="min-w-[120px]"
+            >
+              {showStatusLinkCopied ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-600" />
+                  <span className="text-green-600">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#506B4D]/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-[#506B4D]" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Visual Body Measurements</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Interactive body diagram for taking accurate measurements with visual guides
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => navigate(`/sessions/${sessionId}/body-measurements`)}>
+            Open Diagram
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Garment Photos</h2>
+          <div className="flex items-center gap-3">
+            {photos.length > 0 && (
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {photos.length} photo{photos.length !== 1 ? 's' : ''}
+              </span>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/heic,image/heif"
+              multiple
+              onChange={(e) => handlePhotoUpload(e.target.files)}
+              className="hidden"
+              id="photo-upload-input"
+            />
+            <Button
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto}
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              {uploadingPhoto ? 'Uploading...' : photos.length > 0 ? 'Add More' : 'Add Photos'}
+            </Button>
+          </div>
+        </div>
+
+        {photos.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+              <Camera className="w-8 h-8 text-gray-400 dark:text-gray-600" />
+            </div>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No photos yet
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-md">
+              Add photos of the garment to track progress and reference details
+            </p>
+            <Button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
+              <Upload className="w-4 h-4 mr-2" />
+              {uploadingPhoto ? 'Uploading...' : 'Upload Photos'}
+            </Button>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+              JPG, PNG, or HEIC • Max 5MB per photo
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className="relative aspect-square border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden group"
+                >
+                  <img
+                    src={photo.thumbnail_url}
+                    alt={`Garment photo ${index + 1}`}
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => {
+                      setLightboxIndex(index);
+                      setShowLightbox(true);
+                    }}
+                    onError={(e) => {
+                      console.error('Failed to load thumbnail:', photo.thumbnail_url);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+
+                  <div
+                    className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center cursor-pointer"
+                    onClick={() => {
+                      setLightboxIndex(index);
+                      setShowLightbox(true);
+                    }}
+                  >
+                    <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" />
+                  </div>
+
+                  <button
+                    onClick={() => handleDeletePhoto(photo.id, photo.file_path, photo.thumbnail_path)}
+                    disabled={deletingPhotoId === photo.id}
+                    className={`absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 ${
+                      deletingPhotoId === photo.id ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    title="Delete photo"
+                  >
+                    {deletingPhotoId === photo.id ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+              Click photos to view full size • Hover to delete
+            </p>
+          </>
+        )}
       </Card>
 
       {isSuit && (
@@ -724,6 +1176,15 @@ export function SessionDetail() {
           </div>
         </div>
       </Card>
+
+      {showLightbox && photos.length > 0 && (
+        <Lightbox
+          photos={photos}
+          currentIndex={lightboxIndex}
+          onClose={() => setShowLightbox(false)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }

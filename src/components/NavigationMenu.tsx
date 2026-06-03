@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, LayoutDashboard, Users, Scissors, CheckSquare, MessageSquare, FileText } from 'lucide-react';
+
+// With "Fabrics", "Queries", and "Reports" page
+//import { Menu, X, Search, LayoutDashboard, Users, Scissors, CheckSquare, MessageSquare, FileText } from 'lucide-react';
+
+// Without
+import { Menu, X, Search, LayoutDashboard, Users, CheckSquare } from 'lucide-react';
+
 import { GlobalSearchResults } from './GlobalSearchResults';
 
 interface NavigationMenuProps {
@@ -70,10 +76,10 @@ export function NavigationMenu({ currentPage, searchQuery, onSearchChange }: Nav
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
-    { id: 'fabrics', label: 'Fabrics', icon: Scissors, path: '/fabrics' },
+    //{ id: 'fabrics', label: 'Fabrics', icon: Scissors, path: '/fabrics' },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, path: '/tasks' },
-    { id: 'queries', label: 'Queries', icon: MessageSquare, path: '/queries' },
-    { id: 'reports', label: 'Reports', icon: FileText, path: '/reports' },
+    //{ id: 'queries', label: 'Queries', icon: MessageSquare, path: '/queries' },
+    //{ id: 'reports', label: 'Reports', icon: FileText, path: '/reports' },
   ];
 
   return (

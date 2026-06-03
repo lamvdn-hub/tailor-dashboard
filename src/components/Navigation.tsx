@@ -5,6 +5,7 @@ import { BurgerMenu } from './BurgerMenu';
 import { NavigationMenu } from './NavigationMenu';
 import { GlobalSearchResults } from './GlobalSearchResults';
 import { useAuth } from '../contexts/AuthContext';
+import logoUrl from '../assets/wbb-tailor-logo.webp';
 
 interface NavigationProps {
   currentPage: string;
@@ -19,10 +20,10 @@ export function Navigation({ currentPage }: NavigationProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', path: '/dashboard' },
     { id: 'clients', label: 'Clients', path: '/clients' },
-    { id: 'fabrics', label: 'Fabrics', path: '/fabrics' },
+    //{ id: 'fabrics', label: 'Fabrics', path: '/fabrics' },
     { id: 'tasks', label: 'Tasks', path: '/tasks' },
-    { id: 'queries', label: 'Queries', path: '/queries' },
-    { id: 'reports', label: 'Reports', path: '/reports' },
+    //{ id: 'queries', label: 'Queries', path: '/queries' },
+    //{ id: 'reports', label: 'Reports', path: '/reports' },
   ];
 
   const handleSearchResultClick = (type: string, id: string) => {
@@ -48,7 +49,7 @@ export function Navigation({ currentPage }: NavigationProps) {
   };
 
   return (
-    <nav className="bg-[#506B4D] dark:bg-gray-800 text-white shadow-lg sticky top-0 z-50 transition-colors">
+    <nav className="bg-[#506B4D] dark:bg-gray-800 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between gap-3 md:gap-4 lg:gap-6 h-16 md:h-28 lg:h-32">
           <Link
@@ -57,7 +58,7 @@ export function Navigation({ currentPage }: NavigationProps) {
             aria-label="Go to Dashboard"
           >
             <img
-              src="/Screenshot+2023-09-13+at+13.49.21 copy.webp"
+              src={logoUrl}
               alt="WBB Tailor Logo"
               className="h-12 md:h-20 lg:h-24 w-auto object-contain"
             />

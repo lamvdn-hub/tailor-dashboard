@@ -90,25 +90,18 @@ export function MobileSelect({
 
   useEffect(() => {
     if (isOpen && !isMobile && buttonRef.current) {
-      const updatePosition = () => {
-        if (buttonRef.current) {
-          const rect = buttonRef.current.getBoundingClientRect();
-          setDropdownPosition({
-            top: rect.bottom + 4,
-            left: rect.left,
-            width: rect.width,
-          });
-        }
-      };
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
 
-      updatePosition();
-
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
+      const closeOnScroll = () => setIsOpen(false);
+      window.addEventListener('scroll', closeOnScroll, true);
 
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', closeOnScroll, true);
       };
     }
   }, [isOpen, isMobile]);
@@ -155,8 +148,6 @@ export function MobileSelect({
               className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-700 rounded-t-2xl shadow-2xl z-[9999] animate-slide-up"
               style={{
                 maxHeight: '70vh',
-                transform: 'translateZ(0)',
-                WebkitTransform: 'translateZ(0)',
               }}
             >
               <div className="sticky top-0 bg-white dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 px-4 py-3 rounded-t-2xl">
@@ -177,7 +168,6 @@ export function MobileSelect({
                 className="overflow-y-auto px-2 py-2"
                 style={{
                   maxHeight: 'calc(70vh - 60px)',
-                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 {options.map((option) => (
@@ -234,8 +224,6 @@ export function MobileSelect({
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,
               width: `${dropdownPosition.width}px`,
-              transform: 'translateZ(0)',
-              WebkitTransform: 'translateZ(0)',
             }}
           >
             {options.map((option) => (
