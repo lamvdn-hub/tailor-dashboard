@@ -38,8 +38,8 @@ npm install
 Create a `.env` file in the project root with these test keys:
 
 ```env
-VITE_SUPABASE_URL=https://deukvvjkicatrhxmrbcc.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldWt2dmpraWNhdHJoeG1yYmNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NzA5MjgsImV4cCI6MjA3ODU0NjkyOH0.2WTvW8Ap0FT8ILmMd-oFbktTkCRXFfLa3DNlFxLaOIQ
+VITE_SUPABASE_URL=""
+VITE_SUPABASE_ANON_KEY=""
 
 ```
 
