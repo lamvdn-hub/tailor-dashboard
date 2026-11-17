@@ -1,0 +1,9 @@
+{
+  "name": "Tailor Desk",
+  "short_name": "Tailor Desk",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f5f2",
+  "theme_color": "#f6f5f2",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
