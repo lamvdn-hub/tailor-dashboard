@@ -29,7 +29,7 @@ The legal texts in `src/features/legal/LegalPages.tsx` are a starting point. Hav
 ## Setup
 
 1. Create a Supabase project in an EU region.
-2. Apply the migrations in `supabase/migrations/` (`supabase db push`, or run them in order in the SQL editor).
+2. Apply the schema: `supabase db push` with the CLI, or paste `supabase/setup.sql` (all migrations combined, in order) into the SQL editor of a new, empty project.
 3. Auth settings: enable email confirmations, add `<your-domain>/auth/reset` to redirect URLs.
 4. Deploy `supabase/functions/storage-gc` and schedule it (e.g. hourly) to remove orphaned photo files. Retention runs daily via `pg_cron` when the extension is available; otherwise schedule `select public.run_retention()`.
 5. `cp .env.example .env` and fill in the values.
