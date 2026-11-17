@@ -39,17 +39,17 @@ export function MeasurementTable({ garment, values, onChange }: Props) {
                 const warn = valueOutOfRange(def, v);
                 return (
                   <div key={def.key} className="flex min-h-12 items-center gap-3 py-1.5">
-                    <dt className="flex min-w-0 flex-1 items-center gap-1.5 text-[0.9375rem] text-ink-2">
+                    <dt className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-ink-2 sm:text-[0.9375rem]">
                       <span className="truncate">{name}</span>
                       {!onChange && warn && (
                         <AlertTriangle aria-label={t.measurements.outOfRange(def.min, def.max, def.unit)} className="size-3.5 shrink-0 text-warn" />
                       )}
                     </dt>
-                    <dd className="flex shrink-0 gap-2">
+                    <dd className="flex shrink-0 gap-1.5 sm:gap-2">
                       {onChange ? (
                         def.paired ? (
                           (['l', 'r'] as const).map((side) => (
-                            <div key={side} className="w-[6.5rem]">
+                            <div key={side} className="w-[5.25rem] sm:w-[6.5rem]">
                               <MeasureInput
                                 compact
                                 def={def}

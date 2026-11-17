@@ -20,7 +20,7 @@ interface SectionProps {
 /** A titled card. `flush` removes body padding for edge-to-edge lists. */
 export function Section({ title, description, action, children, className, flush, id }: SectionProps) {
   return (
-    <section aria-labelledby={id ? `${id}-title` : undefined} className={cn('flex flex-col gap-2', className)}>
+    <section aria-labelledby={id ? `${id}-title` : undefined} className={cn('flex min-w-0 flex-col gap-2', className)}>
       <div className="flex min-h-9 items-end justify-between gap-3 px-1">
         <div>
           <h2 id={id ? `${id}-title` : undefined} className="text-[0.8125rem] font-semibold uppercase tracking-wide text-ink-3">

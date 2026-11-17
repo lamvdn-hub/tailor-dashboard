@@ -72,7 +72,7 @@ export function AppShell() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2">
         {t.app.skipToContent}
       </a>
-      <div className="lg:grid lg:min-h-dvh lg:grid-cols-[16rem_1fr]">
+      <div className="lg:grid lg:min-h-dvh lg:grid-cols-[16rem_minmax(0,1fr)]">
         {/* Desktop sidebar */}
         <aside className="sticky top-0 hidden h-dvh flex-col gap-1 border-r border-line bg-surface px-3 py-4 lg:flex">
           <div className="px-3 pb-3">

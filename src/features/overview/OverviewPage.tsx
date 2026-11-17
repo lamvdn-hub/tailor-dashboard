@@ -101,7 +101,7 @@ export function OverviewPage() {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <Section title={t.overview.recentOrders} flush action={<Link to="/orders" className="text-sm font-medium text-accent">{t.common.showAll}</Link>}>
             {recent.data && recent.data.length > 0 ? (
               <List>
@@ -114,7 +114,7 @@ export function OverviewPage() {
             )}
           </Section>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-6">
             <Section title={t.overview.upcomingTasks} flush action={<Link to="/tasks" className="text-sm font-medium text-accent">{t.common.showAll}</Link>}>
               {openTasks.length ? (
                 <List>
